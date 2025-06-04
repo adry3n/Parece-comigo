@@ -1,0 +1,11 @@
+# Arquivos gerados pelo Code::Blocks
+*.o
+*.exe
+*.layout
+*.depend
+bin/
+obj/
+
+# Outros arquivos temporários
+*.bak
+*.tmp
