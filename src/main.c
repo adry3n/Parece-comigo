@@ -1,11 +1,11 @@
-//wall.png (80x80 pixels) valor 0.
-//sided_wall.png (40x80 pixels) valor 1.
-//left_shadow_floor.png (40x120 pixels, 3 variações dispostas verticalmente, cada tile 40x40) valor 2.
-//right_shadow_floor.png (40x120 pixels, 3 variações dispostas verticalmente, cada tile 40x40) valor 3.
-//top_shadow_floor.png (40x80 pixels, 2 variações dispostas verticalmente, cada tile 40x40) valor 4.
+//wall.png valor 0.
+//sided_wall.png valor 1.
+//left_shadow_floor.png (3 variações) valor 2.
+//right_shadow_floor.png (3 variações ) valor 3.
+//top_shadow_floor.png (, 2 variações) valor 4.
 //top_left_shadow_floor.png (40x40 pixels, 1 variação) valor 5.
 //top_right_shadow_floor.png (40x40 pixels, 1 variação) valor 6.
-//floor.png (80x120 pixels, 6 variações em uma grade 2x3, cada tile 40x40) valor 7.
+//floor.png (6 variações) valor 7.
 
 #define _USE_MATH_DEFINES
 #include <allegro5/allegro.h>
@@ -20,11 +20,11 @@
 #include <time.h>
 #include <math.h>
 
-#define KNIFE_WIDTH 64        // Largura de cada quadro da faca (64 pixels)
-#define KNIFE_HEIGHT 56       // Altura de cada quadro da faca (56 pixels)
-#define KNIFE_FRAMES 3        // Número de quadros na animação (3 quadros)
-#define KNIFE_ANIM_SPEED 0.1  // Velocidade da animação (0.1 segundos por quadro)
-#define KNIFE_RANGE 50        // Alcance do ataque da faca (em pixels)
+#define KNIFE_WIDTH 64        // largura dos quadros da faca
+#define KNIFE_HEIGHT 56       // altura dos quadros da faca
+#define KNIFE_FRAMES 3        // número de quadros na animação
+#define KNIFE_ANIM_SPEED 0.1  // velocidade da animação
+#define KNIFE_RANGE 50        // alcance do ataque da faca
 #define WIDTH 640
 #define HEIGHT 480
 #define SPRITE_SIZE 48
@@ -33,9 +33,9 @@
 #define MAP_WIDTH 1280
 #define MAP_HEIGHT 960
 #define NUM_NPCS 14
-#define MIN_NPC_DISTANCE 200
-#define MAX_NPC_DISTANCE 250
-#define TILE_SIZE 40          // Tamanho dos tiles (40x40 pixels)
+#define MIN_NPC_DISTANCE 600
+#define MAX_NPC_DISTANCE 1200
+#define TILE_SIZE 40          // Tamanho dos tiles
 #define TILE_COLS (MAP_WIDTH / TILE_SIZE)  // 32 colunas
 #define TILE_ROWS (MAP_HEIGHT / TILE_SIZE) // 24 linhas
 
@@ -52,27 +52,27 @@ typedef struct {
 
 typedef struct {
     float x, y;              // Posição da faca (relativa ao jogador)
-    int frame;               // Quadro atual da animação
-    bool active;             // Se a faca está sendo exibida/animada
+    int frame;               // Quadro da animação
+    bool active;             // Se a faca ta sendo exibida
     float anim_timer;        // Temporizador para controlar a animação
-    ALLEGRO_BITMAP *sprite_sheet; // Spritesheet da faca
+    ALLEGRO_BITMAP *sprite_sheet; // Sprite da faca
 } Knife;
 
-// Matriz do mapa (24 linhas x 32 colunas)
+// matriz do mapa
 int map[TILE_ROWS][TILE_COLS] = {
     {1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
-    {1,5,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,6,1},
-    {1,2,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,3,1},
-    {1,2,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,3,1},
-    {1,2,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,3,1},
-    {1,2,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,3,1},
-    {1,2,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,3,1},
-    {1,2,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,3,1},
-    {1,2,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,3,1},
-    {1,2,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,3,1},
-    {1,2,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,3,1},
-    {1,2,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,3,1},
-    {1,2,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,3,1},
+    {1,5,4,4,4,4,4,1,4,4,4,4,4,4,1,4,4,4,4,4,4,4,4,0,4,7,4,4,4,4,6,1},
+    {1,2,7,3,1,7,7,1,0,0,7,7,0,0,1,0,0,0,0,0,0,0,7,0,7,7,7,7,7,7,3,1},
+    {1,2,1,3,1,7,7,1,7,7,7,7,7,7,1,7,7,7,7,7,7,7,7,7,7,0,0,0,0,0,3,1},
+    {1,0,0,0,0,7,7,0,0,0,7,7,7,7,7,7,7,7,7,7,7,0,0,0,0,0,7,7,7,0,3,1},
+    {1,2,7,7,7,7,7,7,7,1,7,7,0,7,7,0,0,0,0,7,7,0,7,0,7,7,7,0,7,0,3,1},
+    {1,2,0,7,0,0,0,7,7,1,7,7,0,7,7,0,7,7,7,7,7,0,7,7,7,7,7,0,7,7,3,1},
+    {1,2,0,7,7,7,0,7,7,1,0,0,0,7,7,0,0,0,7,7,7,7,7,7,0,0,0,0,7,7,3,1},
+    {1,2,0,7,7,7,0,7,7,7,7,7,7,7,7,0,7,7,7,0,7,7,7,0,0,7,7,7,7,7,3,1},
+    {1,0,0,7,0,0,0,0,0,0,0,0,0,0,0,0,7,7,7,0,7,7,7,7,7,7,7,7,7,7,3,1},
+    {1,2,7,7,7,0,7,7,7,7,7,7,7,7,7,0,7,7,7,0,7,7,7,7,7,7,7,7,7,7,3,1},
+    {1,2,7,7,7,0,0,7,7,7,7,7,7,7,7,0,7,7,7,7,7,7,7,7,7,7,7,7,7,7,3,1},
+    {1,2,7,7,7,7,7,7,7,7,7,7,7,0,0,0,7,7,7,7,7,7,7,7,7,7,7,7,7,7,3,1},
     {1,2,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,3,1},
     {1,2,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,3,1},
     {1,2,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,3,1},
@@ -86,7 +86,7 @@ int map[TILE_ROWS][TILE_COLS] = {
     {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}
 };
 
-// Matriz para armazenar as variações dos tiles com múltiplas opções (2, 3, 4, 7)
+// Matriz para armazenar as variações dos tiles com múltiplas opções dw
 int tile_variations[TILE_ROWS][TILE_COLS];
 
 // Bitmaps para os tiles
@@ -1351,3 +1351,4 @@ int main() {
 
     return 0;
 }
+
