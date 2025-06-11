@@ -1,11 +1,10 @@
 //wall.png valor 0.
-//sided_wall.png valor 1.
-//left_shadow_floor.png (3 variações) valor 2.
-//right_shadow_floor.png (3 variações ) valor 3.
-//top_shadow_floor.png (, 2 variações) valor 4.
-//top_left_shadow_floor.png (40x40 pixels, 1 variação) valor 5.
-//top_right_shadow_floor.png (40x40 pixels, 1 variação) valor 6.
-//floor.png (6 variações) valor 7.
+//left_shadow_floor.png (3 variações) valor 1.
+//right_shadow_floor.png (3 variações) valor 2.
+//top_shadow_floor.png (2 variações) valor 3.
+//top_left_shadow_floor.png (40x40 pixels, 1 variação) valor 4.
+//top_right_shadow_floor.png (40x40 pixels, 1 variação) valor 5.
+//floor.png (6 variações) valor 6.
 
 #define _USE_MATH_DEFINES
 #include <allegro5/allegro.h>
@@ -58,40 +57,41 @@ typedef struct {
     ALLEGRO_BITMAP *sprite_sheet; // Sprite da faca
 } Knife;
 
-// matriz do mapa
+// matriz do mapa (1 → 0, 2 → 1, 3 → 2, 4 → 3, 5 → 4, 6 → 5, 7 → 6)
 int map[TILE_ROWS][TILE_COLS] = {
-    {1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
-    {1,5,4,4,4,4,4,1,4,4,4,4,4,4,1,4,4,4,4,4,4,4,4,0,4,7,4,4,4,4,6,1},
-    {1,2,7,3,1,7,7,1,0,0,7,7,0,0,1,0,0,0,0,0,0,0,7,0,7,7,7,7,7,7,3,1},
-    {1,2,1,3,1,7,7,1,7,7,7,7,7,7,1,7,7,7,7,7,7,7,7,7,7,0,0,0,0,0,3,1},
-    {1,0,0,0,0,7,7,0,0,0,7,7,7,7,7,7,7,7,7,7,7,0,0,0,0,0,7,7,7,0,3,1},
-    {1,2,7,7,7,7,7,7,7,1,7,7,0,7,7,0,0,0,0,7,7,0,7,0,7,7,7,0,7,0,3,1},
-    {1,2,0,7,0,0,0,7,7,1,7,7,0,7,7,0,7,7,7,7,7,0,7,7,7,7,7,0,7,7,3,1},
-    {1,2,0,7,7,7,0,7,7,1,0,0,0,7,7,0,0,0,7,7,7,7,7,7,0,0,0,0,7,7,3,1},
-    {1,2,0,7,7,7,0,7,7,7,7,7,7,7,7,0,7,7,7,0,7,7,7,0,0,7,7,7,7,7,3,1},
-    {1,0,0,7,0,0,0,0,0,0,0,0,0,0,0,0,7,7,7,0,7,7,7,7,7,7,7,7,7,7,3,1},
-    {1,2,7,7,7,0,7,7,7,7,7,7,7,7,7,0,7,7,7,0,7,7,7,7,7,7,7,7,7,7,3,1},
-    {1,2,7,7,7,0,0,7,7,7,7,7,7,7,7,0,7,7,7,7,7,7,7,7,7,7,7,7,7,7,3,1},
-    {1,2,7,7,7,7,7,7,7,7,7,7,7,0,0,0,7,7,7,7,7,7,7,7,7,7,7,7,7,7,3,1},
-    {1,2,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,3,1},
-    {1,2,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,3,1},
-    {1,2,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,3,1},
-    {1,2,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,3,1},
-    {1,2,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,3,1},
-    {1,2,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,3,1},
-    {1,2,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,3,1},
-    {1,2,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,3,1},
-    {1,2,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,3,1},
-    {1,2,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,3,1},
+    {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+    {0,4,3,3,3,3,5,0,4,3,3,3,3,5,0,4,3,3,3,3,3,3,5,0,4,3,3,3,3,3,5,0},
+    {0,1,6,2,0,1,2,0,0,0,1,2,0,0,0,0,0,0,0,0,1,2,0,0,1,6,6,6,6,6,2,0},
+    {0,1,0,2,0,1,2,0,4,3,6,6,3,5,0,4,3,3,3,3,3,3,3,3,6,0,0,0,0,0,2,0},
+    {0,0,0,0,0,1,2,0,0,0,1,6,6,6,3,6,6,6,6,6,2,0,0,0,0,0,4,3,5,0,2,0},
+    {0,4,3,3,3,6,6,3,5,0,1,2,0,1,2,0,0,0,0,1,2,0,4,0,4,3,2,0,1,0,2,0},
+    {0,1,0,6,0,0,0,6,2,0,1,2,0,1,2,0,4,3,3,6,2,0,1,3,6,6,2,0,1,3,2,0},
+    {0,1,0,1,3,5,0,6,2,0,0,0,0,1,2,0,0,0,1,6,6,3,6,2,0,0,0,0,1,6,2,0},
+    {0,1,0,1,6,2,0,6,6,3,3,3,3,6,2,0,4,3,2,0,1,6,2,0,0,4,5,0,0,0,0,0},
+    {0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,1,6,2,0,1,6,6,3,3,6,2,0,4,3,5,0},
+    {0,4,3,6,5,0,4,3,3,5,0,4,3,3,3,3,6,6,2,0,1,0,0,0,0,6,2,0,1,6,2,0},
+    {0,0,6,6,2,0,0,6,2,0,0,0,1,0,0,0,6,6,2,0,1,0,4,3,3,6,2,0,0,1,2,0},
+    {0,4,6,6,6,3,3,6,2,0,4,3,6,3,5,0,0,0,0,0,1,0,0,0,1,6,2,0,1,6,2,0},
+    {0,0,0,0,6,2,0,0,0,0,1,6,6,6,2,0,4,3,3,3,6,3,5,0,1,6,2,0,1,6,2,0},
+    {0,4,0,4,6,6,3,3,5,0,1,0,0,0,2,0,1,2,0,1,6,6,2,0,1,6,6,3,2,0,2,0},
+    {0,1,0,1,6,6,6,6,2,0,1,3,3,3,2,0,1,2,0,0,1,6,2,0,1,6,6,6,2,0,0,0},
+    {0,1,0,1,6,2,0,1,6,3,6,6,1,0,0,0,1,0,0,4,6,6,2,0,0,0,0,0,1,3,5,0},
+    {0,1,3,6,6,2,0,0,0,0,0,0,0,0,5,0,1,6,6,2,0,1,6,3,5,0,3,6,6,6,2,0},
+    {0,1,6,6,6,2,0,4,3,3,5,0,4,3,2,0,1,6,6,2,0,0,1,2,0,0,6,6,6,0,2,0},
+    {0,1,0,0,0,2,0,1,6,6,2,0,1,6,2,0,1,6,6,6,5,0,1,6,5,0,2,0,0,0,0,0},
+    {0,1,3,5,0,2,0,0,0,1,2,0,1,0,0,0,0,0,6,0,1,6,6,6,2,0,2,0,1,0,5,0},
+    {0,1,2,0,0,2,5,0,4,2,0,0,1,0,4,3,5,0,0,0,1,2,0,0,0,0,2,0,1,0,2,0},
+    {0,1,6,5,0,2,6,3,6,6,3,3,6,3,6,6,6,3,3,3,6,6,3,3,3,3,6,6,6,6,2,0},
     {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}
+
+
 };
 
-// Matriz para armazenar as variações dos tiles com múltiplas opções dw
+// Matriz para armazenar as variações dos tiles com múltiplas opções
 int tile_variations[TILE_ROWS][TILE_COLS];
 
 // Bitmaps para os tiles
 ALLEGRO_BITMAP *wall_sprite; // Parede horizontal (80x80)
-ALLEGRO_BITMAP *sided_wall_sprite; // Parede vertical (40x80)
 ALLEGRO_BITMAP *left_shadow_floor_sprite; // Chão com sombra à esquerda (40x120, 3 variações)
 ALLEGRO_BITMAP *right_shadow_floor_sprite; // Chão com sombra à direita (40x120, 3 variações)
 ALLEGRO_BITMAP *top_shadow_floor_sprite; // Chão com sombra superior (40x80, 2 variações)
@@ -99,13 +99,13 @@ ALLEGRO_BITMAP *top_left_shadow_floor_sprite; // Chão canto superior esquerdo (
 ALLEGRO_BITMAP *top_right_shadow_floor_sprite; // Chão canto superior direito (40x40)
 ALLEGRO_BITMAP *floor_sprite; // Chão sem sombra (80x120, 6 variações)
 
-// Função para verificar se uma posição é válida (não é parede)
+// Função para verificar se uma posição é válida (não é paredes)
 bool can_move(float x, float y) {
     int tile_x = (int)((x + SPRITE_SIZE / 2) / TILE_SIZE);
     int tile_y = (int)((y + SPRITE_SIZE / 2) / TILE_SIZE);
     if (tile_x < 0 || tile_x >= TILE_COLS || tile_y < 0 || tile_y >= TILE_ROWS)
         return false;
-    return map[tile_y][tile_x] != 0 && map[tile_y][tile_x] != 1;
+    return map[tile_y][tile_x] != 0; // Apenas 0 é paredes agora
 }
 
 // Função para encontrar uma posição de spawn válida
@@ -122,7 +122,7 @@ void find_valid_spawn_position(float *x, float *y, float player_x, float player_
     if (!initialized) {
         for (int row = 0; row < TILE_ROWS; row++) {
             for (int col = 0; col < TILE_COLS; col++) {
-                if (map[row][col] != 0 && map[row][col] != 1) {
+                if (map[row][col] != 0) {
                     valid_tiles[valid_tile_count].row = row;
                     valid_tiles[valid_tile_count].col = col;
                     valid_tile_count++;
@@ -157,7 +157,7 @@ void find_valid_spawn_position(float *x, float *y, float player_x, float player_
         }
     }
 
-    // Para NPCs normais ou se o clone falhar, escolher um tile válido aleatoriamente
+    // Escolher um tile válido aleatoriamente
     int index = rand() % valid_tile_count;
     *x = valid_tiles[index].col * TILE_SIZE + (TILE_SIZE - SPRITE_SIZE) / 2;
     *y = valid_tiles[index].row * TILE_SIZE + (TILE_SIZE - SPRITE_SIZE) / 2;
@@ -648,43 +648,10 @@ int main() {
     }
     al_convert_mask_to_alpha(wall_sprite, al_map_rgb(255, 0, 255));
 
-    sided_wall_sprite = al_load_bitmap("../../map/sided_wall.png");
-    if (!sided_wall_sprite) {
-        fprintf(stderr, "Erro ao carregar sprite '../../map/sided_wall.png'.\n");
-        al_destroy_bitmap(wall_sprite);
-        al_destroy_bitmap(knife_frame);
-        al_destroy_bitmap(mia_sprite);
-        al_destroy_bitmap(lucia_sprite);
-        al_destroy_bitmap(bruno_sprite);
-        al_destroy_bitmap(miguel_sprite);
-        al_destroy_bitmap(fernando_sprite);
-        al_destroy_bitmap(lucas_sprite);
-        al_destroy_bitmap(julia_sprite);
-        al_destroy_bitmap(monica_sprite);
-        al_destroy_bitmap(jay_sprite);
-        al_destroy_bitmap(amanda_sprite);
-        al_destroy_bitmap(marcos_sprite);
-        al_destroy_bitmap(nick_sprite);
-        al_destroy_bitmap(judite_sprite);
-        al_destroy_bitmap(daniel_sprite);
-        al_destroy_bitmap(knife_sprite);
-        al_destroy_sample_instance(hit_instance);
-        al_destroy_sample(hit_sample);
-        al_destroy_sample_instance(bg_instance);
-        al_destroy_sample(bg_music);
-        if (font) al_destroy_font(font);
-        al_destroy_timer(timer);
-        al_destroy_event_queue(queue);
-        al_destroy_display(display);
-        return -1;
-    }
-    al_convert_mask_to_alpha(sided_wall_sprite, al_map_rgb(255, 0, 255));
-
     left_shadow_floor_sprite = al_load_bitmap("../../map/left_shadow_floor.png");
     if (!left_shadow_floor_sprite) {
         fprintf(stderr, "Erro ao carregar sprite '../../map/left_shadow_floor.png'.\n");
         al_destroy_bitmap(wall_sprite);
-        al_destroy_bitmap(sided_wall_sprite);
         al_destroy_bitmap(knife_frame);
         al_destroy_bitmap(mia_sprite);
         al_destroy_bitmap(lucia_sprite);
@@ -718,7 +685,6 @@ int main() {
         fprintf(stderr, "Erro ao carregar sprite '../../map/right_shadow_floor.png'.\n");
         al_destroy_bitmap(left_shadow_floor_sprite);
         al_destroy_bitmap(wall_sprite);
-        al_destroy_bitmap(sided_wall_sprite);
         al_destroy_bitmap(knife_frame);
         al_destroy_bitmap(mia_sprite);
         al_destroy_bitmap(lucia_sprite);
@@ -753,7 +719,6 @@ int main() {
         al_destroy_bitmap(right_shadow_floor_sprite);
         al_destroy_bitmap(left_shadow_floor_sprite);
         al_destroy_bitmap(wall_sprite);
-        al_destroy_bitmap(sided_wall_sprite);
         al_destroy_bitmap(knife_frame);
         al_destroy_bitmap(mia_sprite);
         al_destroy_bitmap(lucia_sprite);
@@ -789,7 +754,6 @@ int main() {
         al_destroy_bitmap(right_shadow_floor_sprite);
         al_destroy_bitmap(left_shadow_floor_sprite);
         al_destroy_bitmap(wall_sprite);
-        al_destroy_bitmap(sided_wall_sprite);
         al_destroy_bitmap(knife_frame);
         al_destroy_bitmap(mia_sprite);
         al_destroy_bitmap(lucia_sprite);
@@ -826,7 +790,6 @@ int main() {
         al_destroy_bitmap(right_shadow_floor_sprite);
         al_destroy_bitmap(left_shadow_floor_sprite);
         al_destroy_bitmap(wall_sprite);
-        al_destroy_bitmap(sided_wall_sprite);
         al_destroy_bitmap(knife_frame);
         al_destroy_bitmap(mia_sprite);
         al_destroy_bitmap(lucia_sprite);
@@ -864,7 +827,6 @@ int main() {
         al_destroy_bitmap(right_shadow_floor_sprite);
         al_destroy_bitmap(left_shadow_floor_sprite);
         al_destroy_bitmap(wall_sprite);
-        al_destroy_bitmap(sided_wall_sprite);
         al_destroy_bitmap(knife_frame);
         al_destroy_bitmap(mia_sprite);
         al_destroy_bitmap(lucia_sprite);
@@ -898,19 +860,19 @@ int main() {
     for (int row = 0; row < TILE_ROWS; row++) {
         for (int col = 0; col < TILE_COLS; col++) {
             switch (map[row][col]) {
-                case 2: // left_shadow_floor (3 variações)
+                case 1: // left_shadow_floor (3 variações)
                     tile_variations[row][col] = rand() % 3;
                     break;
-                case 3: // right_shadow_floor (3 variações)
+                case 2: // right_shadow_floor (3 variações)
                     tile_variations[row][col] = rand() % 3;
                     break;
-                case 4: // top_shadow_floor (2 variações)
+                case 3: // top_shadow_floor (2 variações)
                     tile_variations[row][col] = rand() % 2;
                     break;
-                case 7: // floor (6 variações)
+                case 6: // floor (6 variações)
                     tile_variations[row][col] = rand() % 6;
                     break;
-                default: // 0, 1, 5, 6 (sem variações)
+                default: // 0, 4, 5 (sem variações)
                     tile_variations[row][col] = 0;
                     break;
             }
@@ -923,8 +885,7 @@ int main() {
     };
 
     Entity player;
-    player.x = MAP_WIDTH / 2;
-    player.y = MAP_HEIGHT / 2;
+    find_valid_spawn_position(&player.x, &player.y, 0, 0, false); // Passando 0,0 pois não precisa de referência
     player.frame = 0;
     player.movement = 0;
     player.alive = true;
@@ -1221,28 +1182,25 @@ int main() {
                             case 0: // Parede horizontal (80x80)
                                 al_draw_bitmap(wall_sprite, draw_x, draw_y, 0);
                                 break;
-                            case 1: // Parede vertical (40x80)
-                                al_draw_bitmap(sided_wall_sprite, draw_x, draw_y, 0);
-                                break;
-                            case 2: // Chão com sombra à esquerda (40x120, 3 variações)
+                            case 1: // Chão com sombra à esquerda (40x120, 3 variações)
                                 al_draw_bitmap_region(left_shadow_floor_sprite, 0, variation * TILE_SIZE,
                                                      TILE_SIZE, TILE_SIZE, draw_x, draw_y, 0);
                                 break;
-                            case 3: // Chão com sombra à direita (40x120, 3 variações)
+                            case 2: // Chão com sombra à direita (40x120, 3 variações)
                                 al_draw_bitmap_region(right_shadow_floor_sprite, 0, variation * TILE_SIZE,
                                                      TILE_SIZE, TILE_SIZE, draw_x, draw_y, 0);
                                 break;
-                            case 4: // Chão com sombra superior (40x80, 2 variações)
+                            case 3: // Chão com sombra superior (40x80, 2 variações)
                                 al_draw_bitmap_region(top_shadow_floor_sprite, 0, variation * TILE_SIZE,
                                                      TILE_SIZE, TILE_SIZE, draw_x, draw_y, 0);
                                 break;
-                            case 5: // Chão canto superior esquerdo (40x40)
+                            case 4: // Chão canto superior esquerdo (40x40)
                                 al_draw_bitmap(top_left_shadow_floor_sprite, draw_x, draw_y, 0);
                                 break;
-                            case 6: // Chão canto superior direito (40x40)
+                            case 5: // Chão canto superior direito (40x40)
                                 al_draw_bitmap(top_right_shadow_floor_sprite, draw_x, draw_y, 0);
                                 break;
-                            case 7: // Chão sem sombra (80x120, 6 variações, grade 2x3)
+                            case 6: // Chão sem sombra (80x120, 6 variações, grade 2x3)
                                 al_draw_bitmap_region(floor_sprite, (variation % 2) * TILE_SIZE,
                                                      (variation / 2) * TILE_SIZE, TILE_SIZE, TILE_SIZE,
                                                      draw_x, draw_y, 0);
@@ -1323,7 +1281,6 @@ int main() {
     al_destroy_bitmap(top_shadow_floor_sprite);
     al_destroy_bitmap(right_shadow_floor_sprite);
     al_destroy_bitmap(left_shadow_floor_sprite);
-    al_destroy_bitmap(sided_wall_sprite);
     al_destroy_bitmap(wall_sprite);
     al_destroy_bitmap(mia_sprite);
     al_destroy_bitmap(lucia_sprite);
@@ -1348,6 +1305,9 @@ int main() {
     al_destroy_timer(timer);
     al_destroy_event_queue(queue);
     al_destroy_display(display);
+
+    return 0;
+}
 
     return 0;
 }
