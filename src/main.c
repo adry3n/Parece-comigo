@@ -34,11 +34,12 @@
 #define NUM_NPCS 15
 #define MIN_NPC_DISTANCE 800
 #define MAX_NPC_DISTANCE 1200
+#define MIN_MIRROR_DISTANCE 500 // Nova constante para o espelho
 #define TILE_SIZE 40          // Tamanho dos tiles
 #define TILE_COLS (MAP_WIDTH / TILE_SIZE)  // 32 colunas
 #define TILE_ROWS (MAP_HEIGHT / TILE_SIZE) // 24 linhas
-#define CHANCE_TO_PURSUE 5     // Chance de um NPC começar a perseguir
-#define LIGHT_RADIUS 1250        // Raio do círculo de luz
+#define CHANCE_TO_PURSUE 7    // Chance de um NPC começar a perseguir
+#define LIGHT_RADIUS 125       // Raio do círculo de luz
 #define AMBIENT_DARKNESS 0.95f  // Escuridão do ambiente (0.0 = claro, 1.0 = preto)
 
 
@@ -60,6 +61,13 @@ typedef struct {
     float anim_timer;        // Temporizador para controlar a animação
     ALLEGRO_BITMAP *sprite_sheet; // Sprite da faca
 } Knife;
+
+// STRUCT PRA ITENS
+typedef struct {
+    float x, y;
+    bool active;
+    ALLEGRO_BITMAP *sprite;
+} Item;
 
 
     int map[TILE_ROWS][TILE_COLS] = {
@@ -87,8 +95,6 @@ typedef struct {
         {0,1,2,0,0,2,5,0,4,2,0,0,1,0,4,3,5,0,0,0,1,2,0,0,0,0,2,0,1,0,2,0},
         {0,1,6,5,0,2,6,3,6,6,3,3,6,3,6,6,6,3,3,3,6,6,3,3,3,3,6,6,6,6,2,0},
         {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}
-
-
 };
 
 // Matriz para armazenar as variações dos tiles
@@ -108,7 +114,7 @@ typedef struct {
     ALLEGRO_BITMAP *light_buffer = NULL;
 
 
-// Função para verificar se uma posição é válida (não é paredes)
+// verificar se não é paredes
     bool can_move(float x, float y) {
         int tile_x = (int)((x + SPRITE_SIZE / 2) / TILE_SIZE);
         int tile_y = (int)((y + SPRITE_SIZE / 2) / TILE_SIZE);
@@ -149,7 +155,7 @@ typedef struct {
     }
 
     if (is_clone) {
-        // Para o clone, tentar spawn a uma distância específica
+        // Para o clone, spawn a uma distância específica
         int attempts = 0;
         const int max_attempts = 50;
         while (attempts < max_attempts) {
@@ -193,7 +199,7 @@ typedef struct {
 
 
 int main() {
-    // Inicializar
+// Inicializar
     if (!al_init()) {
         fprintf(stderr, "Erro ao inicializar o Allegro.\n");
         return -1;
@@ -628,9 +634,7 @@ int main() {
     al_convert_mask_to_alpha(fisky_sprite, al_map_rgb(255, 0, 255));
 
 
-
-
-// Sprite da faca
+    // Sprite da faca
     ALLEGRO_BITMAP *knife_sprite = al_load_bitmap("../../sprites/knife.png");
     if (!knife_sprite) {
         fprintf(stderr, "Erro ao carregar sprite '../../sprites/knife.png'.\n");
@@ -690,6 +694,74 @@ int main() {
         return -1;
     }
 
+
+
+
+    // **NOVO: Carregar sprites da nova mecânica**
+    ALLEGRO_BITMAP *censure_sprite = al_load_bitmap("../../sprites/censure.png");
+    if (!censure_sprite) {
+        fprintf(stderr, "Erro ao carregar sprite '../../sprites/censure.png'.\n");
+        al_destroy_bitmap(knife_frame);
+        al_destroy_bitmap(mia_sprite);
+        al_destroy_bitmap(lucia_sprite);
+        al_destroy_bitmap(bruno_sprite);
+        al_destroy_bitmap(miguel_sprite);
+        al_destroy_bitmap(fernando_sprite);
+        al_destroy_bitmap(lucas_sprite);
+        al_destroy_bitmap(julia_sprite);
+        al_destroy_bitmap(monica_sprite);
+        al_destroy_bitmap(jay_sprite);
+        al_destroy_bitmap(amanda_sprite);
+        al_destroy_bitmap(marcos_sprite);
+        al_destroy_bitmap(nick_sprite);
+        al_destroy_bitmap(judite_sprite);
+        al_destroy_bitmap(daniel_sprite);
+        al_destroy_bitmap(knife_sprite);
+        al_destroy_sample_instance(hit_instance);
+        al_destroy_sample(hit_sample);
+        al_destroy_sample_instance(bg_instance);
+        al_destroy_sample(bg_music);
+        if (font) al_destroy_font(font);
+        al_destroy_timer(timer);
+        al_destroy_event_queue(queue);
+        al_destroy_display(display);
+        return -1;
+    }
+    al_convert_mask_to_alpha(censure_sprite, al_map_rgb(255, 0, 255));
+
+    ALLEGRO_BITMAP *mirror_sprite = al_load_bitmap("../../sprites/mirror.png");
+    if (!mirror_sprite) {
+        fprintf(stderr, "Erro ao carregar sprite '../../sprites/mirror.png'.\n");
+        al_destroy_bitmap(censure_sprite);
+        al_destroy_bitmap(knife_frame);
+        al_destroy_bitmap(mia_sprite);
+        al_destroy_bitmap(lucia_sprite);
+        al_destroy_bitmap(bruno_sprite);
+        al_destroy_bitmap(miguel_sprite);
+        al_destroy_bitmap(fernando_sprite);
+        al_destroy_bitmap(lucas_sprite);
+        al_destroy_bitmap(julia_sprite);
+        al_destroy_bitmap(monica_sprite);
+        al_destroy_bitmap(jay_sprite);
+        al_destroy_bitmap(amanda_sprite);
+        al_destroy_bitmap(marcos_sprite);
+        al_destroy_bitmap(nick_sprite);
+        al_destroy_bitmap(judite_sprite);
+        al_destroy_bitmap(daniel_sprite);
+        al_destroy_bitmap(knife_sprite);
+        al_destroy_sample_instance(hit_instance);
+        al_destroy_sample(hit_sample);
+        al_destroy_sample_instance(bg_instance);
+        al_destroy_sample(bg_music);
+        if (font) al_destroy_font(font);
+        al_destroy_timer(timer);
+        al_destroy_event_queue(queue);
+        al_destroy_display(display);
+        return -1;
+    }
+    al_convert_mask_to_alpha(mirror_sprite, al_map_rgb(0, 0, 0));
+
+
 // Sprites do mapa
     wall_sprite = al_load_bitmap("../../map/wall.png");
     if (!wall_sprite) {
@@ -710,6 +782,8 @@ int main() {
         al_destroy_bitmap(judite_sprite);
         al_destroy_bitmap(daniel_sprite);
         al_destroy_bitmap(knife_sprite);
+        al_destroy_bitmap(censure_sprite);
+        al_destroy_bitmap(mirror_sprite);
         al_destroy_sample_instance(hit_instance);
         al_destroy_sample(hit_sample);
         al_destroy_sample_instance(bg_instance);
@@ -742,6 +816,8 @@ int main() {
         al_destroy_bitmap(judite_sprite);
         al_destroy_bitmap(daniel_sprite);
         al_destroy_bitmap(knife_sprite);
+        al_destroy_bitmap(censure_sprite);
+        al_destroy_bitmap(mirror_sprite);
         al_destroy_sample_instance(hit_instance);
         al_destroy_sample(hit_sample);
         al_destroy_sample_instance(bg_instance);
@@ -776,6 +852,8 @@ int main() {
         al_destroy_bitmap(daniel_sprite);
         al_destroy_bitmap(fisky_sprite);
         al_destroy_bitmap(knife_sprite);
+        al_destroy_bitmap(censure_sprite);
+        al_destroy_bitmap(mirror_sprite);
         al_destroy_sample_instance(hit_instance);
         al_destroy_sample(hit_sample);
         al_destroy_sample_instance(bg_instance);
@@ -811,6 +889,8 @@ int main() {
         al_destroy_bitmap(daniel_sprite);
         al_destroy_bitmap(fisky_sprite);
         al_destroy_bitmap(knife_sprite);
+        al_destroy_bitmap(censure_sprite);
+        al_destroy_bitmap(mirror_sprite);
         al_destroy_sample_instance(hit_instance);
         al_destroy_sample(hit_sample);
         al_destroy_sample_instance(bg_instance);
@@ -847,6 +927,8 @@ int main() {
         al_destroy_bitmap(daniel_sprite);
         al_destroy_bitmap(fisky_sprite);
         al_destroy_bitmap(knife_sprite);
+        al_destroy_bitmap(censure_sprite);
+        al_destroy_bitmap(mirror_sprite);
         al_destroy_sample_instance(hit_instance);
         al_destroy_sample(hit_sample);
         al_destroy_sample_instance(bg_instance);
@@ -884,6 +966,8 @@ int main() {
         al_destroy_bitmap(daniel_sprite);
         al_destroy_bitmap(fisky_sprite);
         al_destroy_bitmap(knife_sprite);
+        al_destroy_bitmap(censure_sprite);
+        al_destroy_bitmap(mirror_sprite);
         al_destroy_sample_instance(hit_instance);
         al_destroy_sample(hit_sample);
         al_destroy_sample_instance(bg_instance);
@@ -922,6 +1006,8 @@ int main() {
         al_destroy_bitmap(daniel_sprite);
         al_destroy_bitmap(fisky_sprite);
         al_destroy_bitmap(knife_sprite);
+        al_destroy_bitmap(censure_sprite);
+        al_destroy_bitmap(mirror_sprite);
         al_destroy_sample_instance(hit_instance);
         al_destroy_sample(hit_sample);
         al_destroy_sample_instance(bg_instance);
@@ -934,26 +1020,17 @@ int main() {
     }
     al_convert_mask_to_alpha(floor_sprite, al_map_rgb(255, 0, 255));
 
+
 // Inicializar variações dos tiles
     srand(time(NULL));
     for (int row = 0; row < TILE_ROWS; row++) {
         for (int col = 0; col < TILE_COLS; col++) {
             switch (map[row][col]) {
-                case 1: // left_shadow_floor (3 variações)
-                    tile_variations[row][col] = rand() % 3;
-                    break;
-                case 2: // right_shadow_floor (3 variações)
-                    tile_variations[row][col] = rand() % 3;
-                    break;
-                case 3: // top_shadow_floor (2 variações)
-                    tile_variations[row][col] = rand() % 2;
-                    break;
-                case 6: // floor (6 variações)
-                    tile_variations[row][col] = rand() % 6;
-                    break;
-                default: // 0, 4, 5 (sem variações)
-                    tile_variations[row][col] = 0;
-                    break;
+                case 1: tile_variations[row][col] = rand() % 3; break;
+                case 2: tile_variations[row][col] = rand() % 3; break;
+                case 3: tile_variations[row][col] = rand() % 2; break;
+                case 6: tile_variations[row][col] = rand() % 6; break;
+                default: tile_variations[row][col] = 0; break;
             }
         }
     }
@@ -1007,6 +1084,30 @@ int main() {
     knife.anim_timer = 0;
     knife.sprite_sheet = knife_sprite;
 
+    // inicializar espelho**
+    Item mirror_item;
+    mirror_item.sprite = mirror_sprite;
+    mirror_item.active = true;
+
+    // posição pra o espelho a uma distância mínima
+    int attempts = 0;
+    while(attempts < 100) { // Evita loop infinito
+        float spawn_x, spawn_y;
+        find_valid_spawn_position(&spawn_x, &spawn_y, 0, 0, false);
+        float dx = spawn_x - player.x;
+        float dy = spawn_y - player.y;
+        if (sqrt(dx*dx + dy*dy) >= MIN_MIRROR_DISTANCE) {
+            mirror_item.x = spawn_x;
+            mirror_item.y = spawn_y;
+            break;
+        }
+        attempts++;
+    }
+    if (attempts >= 100) { // se não encontrar lugar
+        find_valid_spawn_position(&mirror_item.x, &mirror_item.y, 0, 0, false);
+    }
+
+
     // Eventos
     al_register_event_source(queue, al_get_display_event_source(display));
     al_register_event_source(queue, al_get_timer_event_source(timer));
@@ -1019,6 +1120,7 @@ int main() {
     float camera_x = player.x - WIDTH / 2, camera_y = player.y - HEIGHT / 2;
     bool game_over = false;
     bool victory = false;
+    bool found_mirror = false; // **NOVO: Variável de estado da mecânica**
 
     al_start_timer(timer);
 
@@ -1130,30 +1232,16 @@ int main() {
                     float new_x = player.x;
                     float new_y = player.y;
 
-                    if (keys[0]) { // W (cima)
-                        new_y -= speed;
-                        player.movement = 3;
-                    }
-                    if (keys[1]) { // S (baixo)
-                        new_y += speed;
-                        player.movement = 0;
-                    }
-                    if (keys[2]) { // A (esquerda)
-                        new_x -= speed;
-                        player.movement = 1;
-                    }
-                    if (keys[3]) { // D (direita)
-                        new_x += speed;
-                        player.movement = 2;
-                    }
+                    if (keys[0]) { new_y -= speed; player.movement = 3; }
+                    if (keys[1]) { new_y += speed; player.movement = 0; }
+                    if (keys[2]) { new_x -= speed; player.movement = 1; }
+                    if (keys[3]) { new_x += speed; player.movement = 2; }
 
-                    // Verificar colisão
                     if (can_move(new_x, new_y)) {
                         player.x = new_x;
                         player.y = new_y;
                     }
 
-                    // Limites do mapa
                     if (player.x < 0) player.x = 0;
                     if (player.x > MAP_WIDTH - SPRITE_SIZE) player.x = MAP_WIDTH - SPRITE_SIZE;
                     if (player.y < 0) player.y = 0;
@@ -1166,6 +1254,16 @@ int main() {
                     if (camera_y < 0) camera_y = 0;
                     if (camera_y > MAP_HEIGHT - HEIGHT) camera_y = MAP_HEIGHT - HEIGHT;
 
+                    // encontrar espelho
+                    if (mirror_item.active) {
+                        float dx_mirror = player.x - mirror_item.x;
+                        float dy_mirror = player.y - mirror_item.y;
+                        if (sqrt(dx_mirror * dx_mirror + dy_mirror * dy_mirror) < (SPRITE_SIZE / 2)) {
+                            found_mirror = true;
+                            mirror_item.active = false;
+                            printf("Voce encontrou o espelho!\n");
+                        }
+                    }
 
                     // desvio
                     for (int i = 0; i < NUM_NPCS; i++)
@@ -1174,9 +1272,7 @@ int main() {
                             float new_x_npc = npcs[i].x;
                             float new_y_npc = npcs[i].y;
                             float speed = npcs[i].is_target ? 2.0 : 1.5;
-
                             bool is_pursuing = npcs[i].is_target;
-
                             if (!npcs[i].is_target) {
                                 npcs[i].move_timer -= 1.0 / 60.0;
                                 if (npcs[i].move_timer <= 0) {
@@ -1186,47 +1282,34 @@ int main() {
                                 }
                                 if (npcs[i].move_mode == -1) is_pursuing = true;
                             }
-                            // "se preso"
                             if (is_pursuing) {
                                 float dx = player.x - npcs[i].x;
                                 float dy = player.y - npcs[i].y;
                                 float dist = sqrt(dx * dx + dy * dy);
-
                                 if (dist > 1) {
                                     float move_x = (dx / dist) * speed;
                                     float move_y = (dy / dist) * speed;
-
-                                    // Tenta se mover para o jogador
                                     if (can_move(npcs[i].x + move_x, npcs[i].y + move_y)) {
                                         new_x_npc += move_x;
                                         new_y_npc += move_y;
                                     } else {
-                                        // Se o caminho direto está bloqueado, tenta contornar.
-                                        // Tenta mover apenas no eixo X
                                         if (can_move(npcs[i].x + move_x, npcs[i].y)) {
                                             new_x_npc += move_x;
-                                        }
-                                        // Tenta mover apenas no eixo Y
-                                        else if (can_move(npcs[i].x, npcs[i].y + move_y)) {
+                                        } else if (can_move(npcs[i].x, npcs[i].y + move_y)) {
                                             new_y_npc += move_y;
-                                        }
-                                        // Se preso em um canto
-                                        // força uma nova decisão para os NPCs comuns ou fica parado por um instante (clone).
-                                        else {
+                                        } else {
                                             if (!npcs[i].is_target) {
-                                                npcs[i].move_timer = 0; // NPC comum escolhe novo caminho
+                                                npcs[i].move_timer = 0;
                                             }
                                         }
                                     }
                                 }
-
                                 float angle = atan2(dy, dx) * 180 / M_PI;
-                                if (angle >= -45 && angle < 45) npcs[i].movement = 2; // Direita
-                                else if (angle >= 45 && angle < 135) npcs[i].movement = 0; // Baixo
-                                else if (angle >= 135 || angle < -135) npcs[i].movement = 1; // Esquerda
-                                else npcs[i].movement = 3; // Cima
-
-                            } else { // Movimento aleatório
+                                if (angle >= -45 && angle < 45) npcs[i].movement = 2;
+                                else if (angle >= 45 && angle < 135) npcs[i].movement = 0;
+                                else if (angle >= 135 || angle < -135) npcs[i].movement = 1;
+                                else npcs[i].movement = 3;
+                            } else {
                                 switch (npcs[i].move_mode) {
                                     case 0: new_y_npc -= speed; npcs[i].movement = 3; break;
                                     case 1: new_y_npc += speed; npcs[i].movement = 0; break;
@@ -1239,10 +1322,8 @@ int main() {
                                     new_y_npc = npcs[i].y;
                                 }
                             }
-
                             npcs[i].x = new_x_npc;
                             npcs[i].y = new_y_npc;
-
                             if (npcs[i].is_target) {
                                 float final_dist = sqrt(pow(player.x - npcs[i].x, 2) + pow(player.y - npcs[i].y, 2));
                                 if (final_dist < 50 && !game_over) {
@@ -1250,8 +1331,6 @@ int main() {
                                     victory = false;
                                 }
                             }
-
-                            // Limites do mapa
                             if (npcs[i].x < 0) npcs[i].x = 0;
                         }
                     }
@@ -1260,19 +1339,13 @@ int main() {
                 break;
         }
 
-
-        // Sequencia de eventos desenhada
         if (redraw && al_is_event_queue_empty(queue))
         {
             redraw = false;
-
-            // Desenha o mundo do jogo num buffer
             al_set_target_bitmap(light_buffer);
-            al_clear_to_color(al_map_rgb(0, 0, 0)); // Limpa o buffer
+            al_clear_to_color(al_map_rgb(0, 0, 0));
 
-            // Desenhar mapa
-            for (int row = 0; row < TILE_ROWS; row++)
-            {
+            for (int row = 0; row < TILE_ROWS; row++) {
                 for (int col = 0; col < TILE_COLS; col++) {
                     float draw_x = col * TILE_SIZE - camera_x;
                     float draw_y = row * TILE_SIZE - camera_y;
@@ -1292,78 +1365,65 @@ int main() {
                 }
             }
 
-            // Desenhar jogador
+            // Desenhar espelho**
+            if (mirror_item.active) {
+                al_draw_bitmap(mirror_item.sprite, mirror_item.x - camera_x, mirror_item.y - camera_y, 0);
+            }
+
             if (player.alive && player.sprite_sheet) {
                 int sprite_x = player.frame * SPRITE_SIZE;
                 int sprite_y = player.movement * SPRITE_SIZE;
                 al_draw_bitmap_region(player.sprite_sheet, sprite_x, sprite_y, SPRITE_SIZE, SPRITE_SIZE, player.x - camera_x, player.y - camera_y, 0);
+
+                // desenhar censura se espelho não encontrado
+                if (!found_mirror && censure_sprite) {
+                    al_draw_bitmap(censure_sprite, player.x - camera_x, player.y - camera_y, 0);
+                }
             }
 
-            // Desenha faca
             if (knife.active && knife.sprite_sheet) {
                 int sprite_x = knife.frame * KNIFE_WIDTH;
                 int sprite_y = 0;
                 float draw_x = knife.x - camera_x;
                 float draw_y = knife.y - camera_y;
-
-                // Desenhar o frame da faca num bitmap temporário.
                 al_set_target_bitmap(knife_frame);
                 al_clear_to_color(al_map_rgba(0, 0, 0, 0));
                 al_draw_bitmap_region(knife.sprite_sheet, sprite_x, sprite_y, KNIFE_WIDTH, KNIFE_HEIGHT, 0, 0, 0);
-
-                // Mudar o alvo de volta para o buffer principal do jogo!
                 al_set_target_bitmap(light_buffer);
-
-                // Rotacão da faca
                 switch (player.movement) {
-                    case 0: // Baixo
-                        al_draw_rotated_bitmap(knife_frame, KNIFE_WIDTH / 2, KNIFE_HEIGHT / 2, draw_x + KNIFE_WIDTH / 2, draw_y + KNIFE_HEIGHT / 2, M_PI / 2, 0);
-                        break;
-                    case 1: // Esquerda
-                        al_draw_bitmap_region(knife.sprite_sheet, sprite_x, sprite_y, KNIFE_WIDTH, KNIFE_HEIGHT, draw_x, draw_y, ALLEGRO_FLIP_HORIZONTAL);
-                        break;
-                    case 2: // Direita
-                        al_draw_bitmap_region(knife.sprite_sheet, sprite_x, sprite_y, KNIFE_WIDTH, KNIFE_HEIGHT, draw_x, draw_y, 0);
-                        break;
-                    case 3: // Cima
-                        al_draw_rotated_bitmap(knife_frame, KNIFE_WIDTH / 2, KNIFE_HEIGHT / 2, draw_x + KNIFE_WIDTH / 2, draw_y + KNIFE_HEIGHT / 2, -M_PI / 2, 0);
-                        break;
+                    case 0: al_draw_rotated_bitmap(knife_frame, KNIFE_WIDTH / 2, KNIFE_HEIGHT / 2, draw_x + KNIFE_WIDTH / 2, draw_y + KNIFE_HEIGHT / 2, M_PI / 2, 0); break;
+                    case 1: al_draw_bitmap_region(knife.sprite_sheet, sprite_x, sprite_y, KNIFE_WIDTH, KNIFE_HEIGHT, draw_x, draw_y, ALLEGRO_FLIP_HORIZONTAL); break;
+                    case 2: al_draw_bitmap_region(knife.sprite_sheet, sprite_x, sprite_y, KNIFE_WIDTH, KNIFE_HEIGHT, draw_x, draw_y, 0); break;
+                    case 3: al_draw_rotated_bitmap(knife_frame, KNIFE_WIDTH / 2, KNIFE_HEIGHT / 2, draw_x + KNIFE_WIDTH / 2, draw_y + KNIFE_HEIGHT / 2, -M_PI / 2, 0); break;
                 }
             }
 
-            // Desenhar NPCs
             for (int i = 0; i < NUM_NPCS; i++) {
                 if (npcs[i].alive && npcs[i].sprite_sheet) {
                     int sprite_x = npcs[i].frame * SPRITE_SIZE;
                     int sprite_y = npcs[i].movement * SPRITE_SIZE;
                     al_draw_bitmap_region(npcs[i].sprite_sheet, sprite_x, sprite_y, SPRITE_SIZE, SPRITE_SIZE, npcs[i].x - camera_x, npcs[i].y - camera_y, 0);
+
+                    }
                 }
             }
 
-            // Desenhar na tela principal
             al_set_target_backbuffer(display);
-            al_clear_to_color(al_map_rgb(0, 0, 0)); // Limpa a tela
+            al_clear_to_color(al_map_rgb(0, 0, 0));
 
-            // Aplica a iluminação
             if (light_mask) {
-                // Desenha o mundo do jogo (que está no buffer) na tela, mas escurecido.
-                al_draw_tinted_bitmap(light_buffer, al_map_rgb_f(1.0 - AMBIENT_DARKNESS, 1.0 - AMBIENT_DARKNESS, 1.0 - AMBIENT_DARKNESS), 0, 0, 0);
+            al_draw_tinted_bitmap(light_buffer, al_map_rgb_f(1.0 - AMBIENT_DARKNESS, 1.0 - AMBIENT_DARKNESS, 1.0 - AMBIENT_DARKNESS), 0, 0, 0);
+            al_set_blender(ALLEGRO_ADD, ALLEGRO_ONE, ALLEGRO_ONE);
 
-                // Configura o blender para adicionar luz.
-                al_set_blender(ALLEGRO_ADD, ALLEGRO_ONE, ALLEGRO_ONE);
+            al_draw_bitmap_region(light_buffer,
+                        player.x - camera_x + (SPRITE_SIZE / 2.0f) - LIGHT_RADIUS, player.y - camera_y + (SPRITE_SIZE / 2.0f) - LIGHT_RADIUS,
+                        LIGHT_RADIUS * 2, LIGHT_RADIUS * 2,
+                        player.x - camera_x + (SPRITE_SIZE / 2.0f) - LIGHT_RADIUS, player.y - camera_y + (SPRITE_SIZE / 2.0f) - LIGHT_RADIUS,
+                        0);
 
-                // Desenha o buffer do jogo novamente, mas desta vez, apenas onde a máscara de luz está.
-                al_draw_bitmap_region(light_buffer,
-                                      player.x - camera_x - LIGHT_RADIUS, player.y - camera_y - LIGHT_RADIUS,
-                                      LIGHT_RADIUS * 2, LIGHT_RADIUS * 2,
-                                      player.x - camera_x - LIGHT_RADIUS, player.y - camera_y - LIGHT_RADIUS,
-                                      0);
-
-                // Restaura o blender padrão.
-                al_set_blender(ALLEGRO_ADD, ALLEGRO_ONE, ALLEGRO_INVERSE_ALPHA);
+            al_set_blender(ALLEGRO_ADD, ALLEGRO_ONE, ALLEGRO_INVERSE_ALPHA);
             }
 
-            // Desenhar mensagem de game over
             if (game_over && font)
             {
                 const char *msg = victory ? "Você venceu!" : "Você perdeu!";
@@ -1375,7 +1435,6 @@ int main() {
 
             al_flip_display();
         }
-    }
 
     // Limpeza
     al_destroy_bitmap(knife_frame);
@@ -1402,6 +1461,8 @@ int main() {
     al_destroy_bitmap(daniel_sprite);
     al_destroy_bitmap(fisky_sprite);
     al_destroy_bitmap(knife_sprite);
+    al_destroy_bitmap(censure_sprite);
+    al_destroy_bitmap(mirror_sprite);
     al_destroy_bitmap(light_mask);
     al_destroy_bitmap(light_buffer);
     al_destroy_sample_instance(hit_instance);
@@ -1414,7 +1475,4 @@ int main() {
     al_destroy_display(display);
 
     return 0;
-}
-    return 0;
-}
-
+    }
