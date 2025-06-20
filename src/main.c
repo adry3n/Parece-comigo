@@ -39,7 +39,7 @@
 #define TILE_COLS (MAP_WIDTH / TILE_SIZE)  // 32 colunas
 #define TILE_ROWS (MAP_HEIGHT / TILE_SIZE) // 24 linhas
 #define CHANCE_TO_PURSUE 7    // Chance de um NPC começar a perseguir
-#define LIGHT_RADIUS 125       // Raio do círculo de luz
+#define LIGHT_RADIUS 125      // Raio do círculo de luz
 #define AMBIENT_DARKNESS 0.95f  // Escuridão do ambiente (0.0 = claro, 1.0 = preto)
 
 
@@ -52,6 +52,7 @@ typedef struct {
     float move_timer;
     float move_duration;
     int move_mode; // -1: Perseguindo; 0-3: Aleatório
+    float death_timer; // Contador para a animação de morte. 0 = não morrendo. >0 = morrendo.
 } Entity;
 
 typedef struct {
@@ -115,13 +116,59 @@ typedef struct {
 
 
 // verificar se não é paredes
-    bool can_move(float x, float y) {
+    bool can_move(float x, float y)
+    {
         int tile_x = (int)((x + SPRITE_SIZE / 2) / TILE_SIZE);
         int tile_y = (int)((y + SPRITE_SIZE / 2) / TILE_SIZE);
         if (tile_x < 0 || tile_x >= TILE_COLS || tile_y < 0 || tile_y >= TILE_ROWS)
             return false;
         return map[tile_y][tile_x] != 0; // Apenas 0 é paredes agora
     }
+
+
+// Função pra ver se tem parede entre dois pontos
+    bool has_line_of_sight(float x1, float y1, float x2, float y2)
+    {
+        float dx = x2 - x1;
+        float dy = y2 - y1;
+        float distance = sqrt(dx * dx + dy * dy);
+
+        if (distance == 0) {
+            return true; // Os pontos são os mesmos, linha de visão clara.
+        }
+
+    // Normaliza o vetor de direção
+        float step_x = dx / distance;
+        float step_y = dy / distance;
+
+        // Define um tamanho de passo para a verificação.
+        // Um valor menor é mais preciso, mas mais lento. Metade do tamanho de um tile é um bom começo.
+        float step_size = TILE_SIZE / 2.0f;
+
+        // "Caminha" ao longo da linha do ponto 1 para o ponto 2
+        for (float i = 0; i < distance; i += step_size) {
+            float current_x = x1 + i * step_x;
+            float current_y = y1 + i * step_y;
+
+        // Pega as coordenadas do tile no ponto atual da linha
+            int tile_x = (int)(current_x / TILE_SIZE);
+            int tile_y = (int)(current_y / TILE_SIZE);
+
+        // Verifica se as coordenadas estão dentro do mapa
+            if (tile_x < 0 || tile_x >= TILE_COLS || tile_y < 0 || tile_y >= TILE_ROWS) {
+                return false; // Fora do mapa é considerado bloqueado
+            }
+
+        // Se o tile atual é uma parede (valor 0), a linha de visão está bloqueada.
+            if (map[tile_y][tile_x] == 0) {
+                return false;
+            }
+        }
+
+    // Se loop terminar = nenhuma parede encontrada no caminho.
+    return true;
+    }
+
 
 // Função para encontrar uma posição de spawn válida
     typedef struct {
@@ -134,7 +181,8 @@ typedef struct {
         static bool initialized = false;
 
     // Inicializar lista de tiles válidos
-    if (!initialized) {
+    if (!initialized)
+    {
         for (int row = 0; row < TILE_ROWS; row++) {
             for (int col = 0; col < TILE_COLS; col++) {
                 if (map[row][col] != 0) {
@@ -198,7 +246,8 @@ typedef struct {
     }
 
 
-int main() {
+int main()
+{
 // Inicializar
     if (!al_init()) {
         fprintf(stderr, "Erro ao inicializar o Allegro.\n");
@@ -258,7 +307,6 @@ int main() {
     // luz
     light_buffer = al_create_bitmap(WIDTH, HEIGHT);
     create_light_mask(); // cria a máscara
-
     if (!light_buffer || !light_mask) {
         fprintf(stderr, "Erro ao criar recursos de iluminação.\n");
         return -1;
@@ -270,6 +318,7 @@ int main() {
     ALLEGRO_SAMPLE_INSTANCE *hit_instance = NULL;
     ALLEGRO_SAMPLE *bg_music = NULL;
     ALLEGRO_SAMPLE_INSTANCE *bg_instance = NULL;
+
     if (al_install_audio())
     {
         al_reserve_samples(2); // Hit + música de fundo
@@ -694,7 +743,36 @@ int main() {
         return -1;
     }
 
-
+    // animação de morte
+    ALLEGRO_BITMAP *death_sprite_frame = al_create_bitmap(SPRITE_SIZE, SPRITE_SIZE);
+    if (!death_sprite_frame) {
+        fprintf(stderr, "Erro ao criar bitmap temporário para a morte.\n");
+        al_destroy_bitmap(knife_frame);
+        al_destroy_bitmap(mia_sprite);
+        al_destroy_bitmap(lucia_sprite);
+        al_destroy_bitmap(bruno_sprite);
+        al_destroy_bitmap(miguel_sprite);
+        al_destroy_bitmap(fernando_sprite);
+        al_destroy_bitmap(lucas_sprite);
+        al_destroy_bitmap(julia_sprite);
+        al_destroy_bitmap(monica_sprite);
+        al_destroy_bitmap(jay_sprite);
+        al_destroy_bitmap(amanda_sprite);
+        al_destroy_bitmap(marcos_sprite);
+        al_destroy_bitmap(nick_sprite);
+        al_destroy_bitmap(judite_sprite);
+        al_destroy_bitmap(daniel_sprite);
+        al_destroy_bitmap(knife_sprite);
+        al_destroy_sample_instance(hit_instance);
+        al_destroy_sample(hit_sample);
+        al_destroy_sample_instance(bg_instance);
+        al_destroy_sample(bg_music);
+        if (font) al_destroy_font(font);
+        al_destroy_timer(timer);
+        al_destroy_event_queue(queue);
+        al_destroy_display(display);
+        return -1;
+    }
 
 
     // **NOVO: Carregar sprites da nova mecânica**
@@ -717,6 +795,7 @@ int main() {
         al_destroy_bitmap(judite_sprite);
         al_destroy_bitmap(daniel_sprite);
         al_destroy_bitmap(knife_sprite);
+        al_destroy_bitmap(death_sprite_frame);
         al_destroy_sample_instance(hit_instance);
         al_destroy_sample(hit_sample);
         al_destroy_sample_instance(bg_instance);
@@ -749,6 +828,7 @@ int main() {
         al_destroy_bitmap(judite_sprite);
         al_destroy_bitmap(daniel_sprite);
         al_destroy_bitmap(knife_sprite);
+        al_destroy_bitmap(death_sprite_frame);
         al_destroy_sample_instance(hit_instance);
         al_destroy_sample(hit_sample);
         al_destroy_sample_instance(bg_instance);
@@ -782,6 +862,7 @@ int main() {
         al_destroy_bitmap(judite_sprite);
         al_destroy_bitmap(daniel_sprite);
         al_destroy_bitmap(knife_sprite);
+        al_destroy_bitmap(death_sprite_frame);
         al_destroy_bitmap(censure_sprite);
         al_destroy_bitmap(mirror_sprite);
         al_destroy_sample_instance(hit_instance);
@@ -816,6 +897,7 @@ int main() {
         al_destroy_bitmap(judite_sprite);
         al_destroy_bitmap(daniel_sprite);
         al_destroy_bitmap(knife_sprite);
+        al_destroy_bitmap(death_sprite_frame);
         al_destroy_bitmap(censure_sprite);
         al_destroy_bitmap(mirror_sprite);
         al_destroy_sample_instance(hit_instance);
@@ -852,6 +934,7 @@ int main() {
         al_destroy_bitmap(daniel_sprite);
         al_destroy_bitmap(fisky_sprite);
         al_destroy_bitmap(knife_sprite);
+        al_destroy_bitmap(death_sprite_frame);
         al_destroy_bitmap(censure_sprite);
         al_destroy_bitmap(mirror_sprite);
         al_destroy_sample_instance(hit_instance);
@@ -889,6 +972,7 @@ int main() {
         al_destroy_bitmap(daniel_sprite);
         al_destroy_bitmap(fisky_sprite);
         al_destroy_bitmap(knife_sprite);
+        al_destroy_bitmap(death_sprite_frame);
         al_destroy_bitmap(censure_sprite);
         al_destroy_bitmap(mirror_sprite);
         al_destroy_sample_instance(hit_instance);
@@ -927,6 +1011,7 @@ int main() {
         al_destroy_bitmap(daniel_sprite);
         al_destroy_bitmap(fisky_sprite);
         al_destroy_bitmap(knife_sprite);
+        al_destroy_bitmap(death_sprite_frame);
         al_destroy_bitmap(censure_sprite);
         al_destroy_bitmap(mirror_sprite);
         al_destroy_sample_instance(hit_instance);
@@ -966,6 +1051,7 @@ int main() {
         al_destroy_bitmap(daniel_sprite);
         al_destroy_bitmap(fisky_sprite);
         al_destroy_bitmap(knife_sprite);
+        al_destroy_bitmap(death_sprite_frame);
         al_destroy_bitmap(censure_sprite);
         al_destroy_bitmap(mirror_sprite);
         al_destroy_sample_instance(hit_instance);
@@ -1006,6 +1092,7 @@ int main() {
         al_destroy_bitmap(daniel_sprite);
         al_destroy_bitmap(fisky_sprite);
         al_destroy_bitmap(knife_sprite);
+        al_destroy_bitmap(death_sprite_frame);
         al_destroy_bitmap(censure_sprite);
         al_destroy_bitmap(mirror_sprite);
         al_destroy_sample_instance(hit_instance);
@@ -1073,6 +1160,7 @@ int main() {
         npcs[i].move_timer = 0;
         npcs[i].move_duration = (rand() % 40 + 40) / 10.0;
         npcs[i].move_mode = rand() % 4;
+        npcs[i].death_timer = 0.0f; // NOVO: Inicializa o timer em 0.
     }
 
     // Inicializar faca
@@ -1130,69 +1218,63 @@ int main() {
         ALLEGRO_EVENT ev;
         al_wait_for_event(queue, &ev);
 
-        switch (ev.type) {
-            case ALLEGRO_EVENT_DISPLAY_CLOSE:
+        switch (ev.type) { // tipo de evento
+            case ALLEGRO_EVENT_DISPLAY_CLOSE: //fechar jogo
                 running = false;
                 break;
 
-            case ALLEGRO_EVENT_KEY_DOWN:
-                if (ev.keyboard.keycode == ALLEGRO_KEY_ESCAPE)
-                    running = false;
-                else if (ev.keyboard.keycode == ALLEGRO_KEY_W)
-                    keys[0] = true;
-                else if (ev.keyboard.keycode == ALLEGRO_KEY_S)
-                    keys[1] = true;
-                else if (ev.keyboard.keycode == ALLEGRO_KEY_A)
-                    keys[2] = true;
-                else if (ev.keyboard.keycode == ALLEGRO_KEY_D)
-                    keys[3] = true;
+            case ALLEGRO_EVENT_KEY_DOWN: //quando teclas são pressionadas
+                if (ev.keyboard.keycode == ALLEGRO_KEY_ESCAPE) running = false;
+                if (ev.keyboard.keycode == ALLEGRO_KEY_W) keys[0] = true;
+                if (ev.keyboard.keycode == ALLEGRO_KEY_S) keys[1] = true;
+                if (ev.keyboard.keycode == ALLEGRO_KEY_A) keys[2] = true;
+                if (ev.keyboard.keycode == ALLEGRO_KEY_D) keys[3] = true;
                 break;
 
-            case ALLEGRO_EVENT_KEY_UP:
-                if (ev.keyboard.keycode == ALLEGRO_KEY_W)
-                    keys[0] = false;
-                else if (ev.keyboard.keycode == ALLEGRO_KEY_S)
-                    keys[1] = false;
-                else if (ev.keyboard.keycode == ALLEGRO_KEY_A)
-                    keys[2] = false;
-                else if (ev.keyboard.keycode == ALLEGRO_KEY_D)
-                    keys[3] = false;
+            case ALLEGRO_EVENT_KEY_UP: // quando teclas são soltas
+                if (ev.keyboard.keycode == ALLEGRO_KEY_W) keys[0] = false;
+                if (ev.keyboard.keycode == ALLEGRO_KEY_S) keys[1] = false;
+                if (ev.keyboard.keycode == ALLEGRO_KEY_A) keys[2] = false;
+                if (ev.keyboard.keycode == ALLEGRO_KEY_D) keys[3] = false;
                 break;
 
-            case ALLEGRO_EVENT_MOUSE_BUTTON_DOWN:
-                if (ev.mouse.button == 1 && !game_over && !knife.active) {
+            case ALLEGRO_EVENT_MOUSE_BUTTON_DOWN: // clique do mouse
+                if (ev.mouse.button == 1 && !game_over && !knife.active)
+                {
                     if (hit_instance) al_play_sample_instance(hit_instance);
                     knife.active = true;
                     knife.frame = 0;
                     knife.anim_timer = 0;
 
-                    switch (player.movement) {
-                        case 0: // Baixo
-                            knife.x = player.x + (SPRITE_SIZE - KNIFE_WIDTH) / 2;
-                            knife.y = player.y + SPRITE_SIZE;
-                            break;
-                        case 1: // Esquerda
-                            knife.x = player.x - KNIFE_WIDTH;
-                            knife.y = player.y + (SPRITE_SIZE - KNIFE_HEIGHT) / 2;
-                            break;
-                        case 2: // Direita
-                            knife.x = player.x + SPRITE_SIZE;
-                            knife.y = player.y + (SPRITE_SIZE - KNIFE_HEIGHT) / 2;
-                            break;
-                        case 3: // Cima
-                            knife.x = player.x + (SPRITE_SIZE - KNIFE_WIDTH) / 2;
-                            knife.y = player.y - KNIFE_HEIGHT;
-                            break;
+                    switch (player.movement) { // direções da faca
+                        case 0: knife.x = player.x + (SPRITE_SIZE - KNIFE_WIDTH) / 2; knife.y = player.y + SPRITE_SIZE; break;
+                        case 1: knife.x = player.x - KNIFE_WIDTH; knife.y = player.y + (SPRITE_SIZE - KNIFE_HEIGHT) / 2; break;
+                        case 2: knife.x = player.x + SPRITE_SIZE; knife.y = player.y + (SPRITE_SIZE - KNIFE_HEIGHT) / 2; break;
+                        case 3: knife.x = player.x + (SPRITE_SIZE - KNIFE_WIDTH) / 2; knife.y = player.y - KNIFE_HEIGHT; break;
                     }
 
-                    for (int i = 0; i < NUM_NPCS; i++) {
+                    // verificar se tem uma parede entre o jogador e o npc
+                    for (int i = 0; i < NUM_NPCS; i++)
+                    {
+                        // Checa se o NPC está vivo (e não já morrendo)
                         if (npcs[i].alive) {
-                            float dx = npcs[i].x - (knife.x + KNIFE_WIDTH / 2);
-                            float dy = npcs[i].y - (knife.y + KNIFE_HEIGHT / 2);
-                            if (dx * dx + dy * dy < KNIFE_RANGE * KNIFE_RANGE) {
-                                npcs[i].alive = false;
+                            float npc_center_x = npcs[i].x + SPRITE_SIZE / 2;
+                            float npc_center_y = npcs[i].y + SPRITE_SIZE / 2;
+                            float player_center_x = player.x + SPRITE_SIZE / 2;
+                            float player_center_y = player.y + SPRITE_SIZE / 2;
+
+                            float dx = npc_center_x - (knife.x + KNIFE_WIDTH / 2);
+                            float dy = npc_center_y - (knife.y + KNIFE_HEIGHT / 2);
+
+                            if (dx * dx + dy * dy < KNIFE_RANGE * KNIFE_RANGE &&
+                                has_line_of_sight(player_center_x, player_center_y, npc_center_x, npc_center_y))
+                            {
+                                // Em vez de só matar, agora iniciamos a animação de morte.
+                                npcs[i].alive = false;          // Para a lógica de movimento e IA do NPC.
+                                npcs[i].death_timer = 1.0f;     // NOVO: Inicia um contador de 1 segundo para a animação.
+
                                 if (npcs[i].is_target) {
-                                    printf("Clone eliminado! Vitória!\n");
+                                    printf("Clone eliminado! Vitoria!\n");
                                     game_over = true;
                                     victory = true;
                                 } else {
@@ -1204,7 +1286,7 @@ int main() {
                 }
                 break;
 
-            case ALLEGRO_EVENT_TIMER:
+                       case ALLEGRO_EVENT_TIMER: // controle das animações
                 sprite_timer += 1.0 / 60.0;
                 if (sprite_timer >= sprite_delay) {
                     player.frame = (player.frame + 1) % SPRITE_COLS;
@@ -1214,7 +1296,7 @@ int main() {
                     sprite_timer = 0.0;
                 }
 
-                if (knife.active) {
+                if (knife.active) { // fazer animação da faca acontecer e depois desaparecer
                     knife.anim_timer += 1.0 / 60.0;
                     if (knife.anim_timer >= KNIFE_ANIM_SPEED) {
                         knife.frame++;
@@ -1226,22 +1308,23 @@ int main() {
                     }
                 }
 
-                if (!game_over)
+                if (!game_over) // tudo do jogo só acontece se o jogo nao tiver acabado
                 {
                     float speed = 3.0;
                     float new_x = player.x;
                     float new_y = player.y;
 
-                    if (keys[0]) { new_y -= speed; player.movement = 3; }
-                    if (keys[1]) { new_y += speed; player.movement = 0; }
-                    if (keys[2]) { new_x -= speed; player.movement = 1; }
-                    if (keys[3]) { new_x += speed; player.movement = 2; }
+                    if (keys[0]) { new_y -= speed; player.movement = 3; } // w
+                    if (keys[1]) { new_y += speed; player.movement = 0; } // a
+                    if (keys[2]) { new_x -= speed; player.movement = 1; } // s
+                    if (keys[3]) { new_x += speed; player.movement = 2; } // d
 
-                    if (can_move(new_x, new_y)) {
+                    if (can_move(new_x, new_y)) { // nao passar paredes
                         player.x = new_x;
                         player.y = new_y;
                     }
 
+                    //  manter o jogador e a câmera dentro da área de jogo
                     if (player.x < 0) player.x = 0;
                     if (player.x > MAP_WIDTH - SPRITE_SIZE) player.x = MAP_WIDTH - SPRITE_SIZE;
                     if (player.y < 0) player.y = 0;
@@ -1254,8 +1337,7 @@ int main() {
                     if (camera_y < 0) camera_y = 0;
                     if (camera_y > MAP_HEIGHT - HEIGHT) camera_y = MAP_HEIGHT - HEIGHT;
 
-                    // encontrar espelho
-                    if (mirror_item.active) {
+                    if (mirror_item.active) { // se espelho ainda no mapa
                         float dx_mirror = player.x - mirror_item.x;
                         float dy_mirror = player.y - mirror_item.y;
                         if (sqrt(dx_mirror * dx_mirror + dy_mirror * dy_mirror) < (SPRITE_SIZE / 2)) {
@@ -1265,14 +1347,15 @@ int main() {
                         }
                     }
 
-                    // desvio
-                    for (int i = 0; i < NUM_NPCS; i++)
-                    {
-                        if (npcs[i].alive) {
+                    // desvio de paredes
+                    for (int i = 0; i < NUM_NPCS; i++) {
+
+                        if (npcs[i].alive) { // verificação se o npc está vivo e próximas decisões
                             float new_x_npc = npcs[i].x;
                             float new_y_npc = npcs[i].y;
                             float speed = npcs[i].is_target ? 2.0 : 1.5;
                             bool is_pursuing = npcs[i].is_target;
+
                             if (!npcs[i].is_target) {
                                 npcs[i].move_timer -= 1.0 / 60.0;
                                 if (npcs[i].move_timer <= 0) {
@@ -1282,34 +1365,35 @@ int main() {
                                 }
                                 if (npcs[i].move_mode == -1) is_pursuing = true;
                             }
-                            if (is_pursuing) {
+
+                            if (is_pursuing)  // verificação se o npc a vivo e proximas decisões
+                            {
                                 float dx = player.x - npcs[i].x;
                                 float dy = player.y - npcs[i].y;
                                 float dist = sqrt(dx * dx + dy * dy);
-                                if (dist > 1) {
+
+                                if (dist > 1) // calcula o vetor do jogador
+                                {
                                     float move_x = (dx / dist) * speed;
                                     float move_y = (dy / dist) * speed;
+
                                     if (can_move(npcs[i].x + move_x, npcs[i].y + move_y)) {
-                                        new_x_npc += move_x;
-                                        new_y_npc += move_y;
-                                    } else {
-                                        if (can_move(npcs[i].x + move_x, npcs[i].y)) {
-                                            new_x_npc += move_x;
-                                        } else if (can_move(npcs[i].x, npcs[i].y + move_y)) {
-                                            new_y_npc += move_y;
-                                        } else {
-                                            if (!npcs[i].is_target) {
-                                                npcs[i].move_timer = 0;
-                                            }
-                                        }
+                                        new_x_npc += move_x; new_y_npc += move_y; // Caminho ideal
+                                    } else // caso não haja
+                                    {
+                                        if (can_move(npcs[i].x + move_x, npcs[i].y)) new_x_npc += move_x; // mover em x
+                                        else if (can_move(npcs[i].x, npcs[i].y + move_y)) new_y_npc += move_y; // se não, mover em y
+                                        else if (!npcs[i].is_target) npcs[i].move_timer = 0; // se não, forcar nova decisao
                                     }
                                 }
                                 float angle = atan2(dy, dx) * 180 / M_PI;
-                                if (angle >= -45 && angle < 45) npcs[i].movement = 2;
-                                else if (angle >= 45 && angle < 135) npcs[i].movement = 0;
-                                else if (angle >= 135 || angle < -135) npcs[i].movement = 1;
-                                else npcs[i].movement = 3;
-                            } else {
+                                    if (angle >= -45 && angle < 45) npcs[i].movement = 2; // direita
+                                    else if (angle >= 45 && angle < 135) npcs[i].movement = 0; // baixo
+                                    else if (angle >= 135 || angle < -135) npcs[i].movement = 1; // esquerda
+                                    else npcs[i].movement = 3; // cima
+
+                            } else //se houver colisão, força nova decisão
+                            {
                                 switch (npcs[i].move_mode) {
                                     case 0: new_y_npc -= speed; npcs[i].movement = 3; break;
                                     case 1: new_y_npc += speed; npcs[i].movement = 0; break;
@@ -1317,21 +1401,31 @@ int main() {
                                     case 3: new_x_npc += speed; npcs[i].movement = 2; break;
                                 }
                                 if (!can_move(new_x_npc, new_y_npc)) {
-                                    npcs[i].move_timer = 0;
-                                    new_x_npc = npcs[i].x;
-                                    new_y_npc = npcs[i].y;
+                                    npcs[i].move_timer = 0; new_x_npc = npcs[i].x; new_y_npc = npcs[i].y;
                                 }
                             }
+                            // atualizaaar posições
                             npcs[i].x = new_x_npc;
                             npcs[i].y = new_y_npc;
+
+                            // lógica do hit  não funcionar entre paredes
                             if (npcs[i].is_target) {
                                 float final_dist = sqrt(pow(player.x - npcs[i].x, 2) + pow(player.y - npcs[i].y, 2));
-                                if (final_dist < 50 && !game_over) {
+                                float player_center_x = player.x + SPRITE_SIZE / 2;
+                                float player_center_y = player.y + SPRITE_SIZE / 2;
+                                float npc_center_x = npcs[i].x + SPRITE_SIZE / 2;
+                                float npc_center_y = npcs[i].y + SPRITE_SIZE / 2;
+                                if (final_dist < 50 && !game_over && has_line_of_sight(player_center_x, player_center_y, npc_center_x, npc_center_y)) {
                                     game_over = true;
                                     victory = false;
                                 }
                             }
                             if (npcs[i].x < 0) npcs[i].x = 0;
+                        }
+                        // Se o NPC não está vivo, ver se ele ta na animação de morte.
+                        else if (npcs[i].death_timer > 0) {
+                            // Diminui o contador a cada frame. (1.0/60.0 por segundo)
+                            npcs[i].death_timer -= 1.0 / 60.0;
                         }
                     }
                 }
@@ -1365,7 +1459,7 @@ int main() {
                 }
             }
 
-            // Desenhar espelho**
+        // Desenhar espelho
             if (mirror_item.active) {
                 al_draw_bitmap(mirror_item.sprite, mirror_item.x - camera_x, mirror_item.y - camera_y, 0);
             }
@@ -1375,13 +1469,15 @@ int main() {
                 int sprite_y = player.movement * SPRITE_SIZE;
                 al_draw_bitmap_region(player.sprite_sheet, sprite_x, sprite_y, SPRITE_SIZE, SPRITE_SIZE, player.x - camera_x, player.y - camera_y, 0);
 
-                // desenhar censura se espelho não encontrado
+                // desenhar censura quando espelho não encontrado
                 if (!found_mirror && censure_sprite) {
                     al_draw_bitmap(censure_sprite, player.x - camera_x, player.y - camera_y, 0);
                 }
             }
 
-            if (knife.active && knife.sprite_sheet) {
+        // Desenhar faca
+            if (knife.active && knife.sprite_sheet) // Fatores a se considerar
+            {
                 int sprite_x = knife.frame * KNIFE_WIDTH;
                 int sprite_y = 0;
                 float draw_x = knife.x - camera_x;
@@ -1390,7 +1486,8 @@ int main() {
                 al_clear_to_color(al_map_rgba(0, 0, 0, 0));
                 al_draw_bitmap_region(knife.sprite_sheet, sprite_x, sprite_y, KNIFE_WIDTH, KNIFE_HEIGHT, 0, 0, 0);
                 al_set_target_bitmap(light_buffer);
-                switch (player.movement) {
+
+                switch (player.movement) { // rotação da faca
                     case 0: al_draw_rotated_bitmap(knife_frame, KNIFE_WIDTH / 2, KNIFE_HEIGHT / 2, draw_x + KNIFE_WIDTH / 2, draw_y + KNIFE_HEIGHT / 2, M_PI / 2, 0); break;
                     case 1: al_draw_bitmap_region(knife.sprite_sheet, sprite_x, sprite_y, KNIFE_WIDTH, KNIFE_HEIGHT, draw_x, draw_y, ALLEGRO_FLIP_HORIZONTAL); break;
                     case 2: al_draw_bitmap_region(knife.sprite_sheet, sprite_x, sprite_y, KNIFE_WIDTH, KNIFE_HEIGHT, draw_x, draw_y, 0); break;
@@ -1398,43 +1495,73 @@ int main() {
                 }
             }
 
-            for (int i = 0; i < NUM_NPCS; i++) {
-                if (npcs[i].alive && npcs[i].sprite_sheet) {
-                    int sprite_x = npcs[i].frame * SPRITE_SIZE;
-                    int sprite_y = npcs[i].movement * SPRITE_SIZE;
-                    al_draw_bitmap_region(npcs[i].sprite_sheet, sprite_x, sprite_y, SPRITE_SIZE, SPRITE_SIZE, npcs[i].x - camera_x, npcs[i].y - camera_y, 0);
 
+        // NPC
+            for (int i = 0; i < NUM_NPCS; i++)
+            {
+                // Desenha se estiver vivo OU na animação de morte.
+                if ((npcs[i].alive || npcs[i].death_timer > 0) && npcs[i].sprite_sheet) {
+
+                    if (npcs[i].alive) {
+                        // Lógica de desenho p npc vivo
+                        int sprite_x = npcs[i].frame * SPRITE_SIZE;
+                        int sprite_y = npcs[i].movement * SPRITE_SIZE;
+                        al_draw_bitmap_region(npcs[i].sprite_sheet, sprite_x, sprite_y, SPRITE_SIZE, SPRITE_SIZE, npcs[i].x - camera_x, npcs[i].y - camera_y, 0);
+                    } else {
+
+                        // Lógica de desenho para a ANIMAÇÃO DE MORTE.
+                        // Posições e frames
+                        int sprite_x = 0; // Usa o primeiro frame (parado)
+                        int sprite_y = 0; // Usa a direção para baixo
+                        float draw_x = npcs[i].x - camera_x;
+                        float draw_y = npcs[i].y - camera_y;
+
+                        // 1. Salva o alvo atual e desenha o frame do NPC no bitmap temporário.
+                        ALLEGRO_BITMAP *prev_target = al_get_target_bitmap();
+                        al_set_target_bitmap(death_sprite_frame);
+                        al_clear_to_color(al_map_rgba(0, 0, 0, 0)); // Limpa o bitmap temporário
+                        al_draw_bitmap_region(npcs[i].sprite_sheet, sprite_x, sprite_y, SPRITE_SIZE, SPRITE_SIZE, 0, 0, 0);
+                        al_set_target_bitmap(prev_target); // Restaura o alvo original (light_buffer)
+
+                        // 2. Desenha o bitmap temporário na tela
+                        al_draw_tinted_rotated_bitmap
+                        (
+                            death_sprite_frame,     // O bitmap temporário
+                            al_map_rgb(255, 120, 120),      // Filtro de cor (vermelho)
+                            SPRITE_SIZE / 2.0f, SPRITE_SIZE / 2.0f,     // ponto para rotação
+                            draw_x + SPRITE_SIZE / 2.0f, draw_y + SPRITE_SIZE / 2.0f, // posição de destino na tela
+                            M_PI / 2.0f,                                  // Ângulo em radianos
+                            0                                             // Flags (nenhum)
+                        );
                     }
                 }
             }
-
             al_set_target_backbuffer(display);
             al_clear_to_color(al_map_rgb(0, 0, 0));
 
+
+        // ILUMINAÇÃO
             if (light_mask) {
-            al_draw_tinted_bitmap(light_buffer, al_map_rgb_f(1.0 - AMBIENT_DARKNESS, 1.0 - AMBIENT_DARKNESS, 1.0 - AMBIENT_DARKNESS), 0, 0, 0);
-            al_set_blender(ALLEGRO_ADD, ALLEGRO_ONE, ALLEGRO_ONE);
-
-            al_draw_bitmap_region(light_buffer,
-                        player.x - camera_x + (SPRITE_SIZE / 2.0f) - LIGHT_RADIUS, player.y - camera_y + (SPRITE_SIZE / 2.0f) - LIGHT_RADIUS,
-                        LIGHT_RADIUS * 2, LIGHT_RADIUS * 2,
-                        player.x - camera_x + (SPRITE_SIZE / 2.0f) - LIGHT_RADIUS, player.y - camera_y + (SPRITE_SIZE / 2.0f) - LIGHT_RADIUS,
-                        0);
-
-            al_set_blender(ALLEGRO_ADD, ALLEGRO_ONE, ALLEGRO_INVERSE_ALPHA);
+                al_draw_tinted_bitmap(light_buffer, al_map_rgb_f(1.0 - AMBIENT_DARKNESS, 1.0 - AMBIENT_DARKNESS, 1.0 - AMBIENT_DARKNESS), 0, 0, 0);
+                al_set_blender(ALLEGRO_ADD, ALLEGRO_ONE, ALLEGRO_ONE);
+                al_draw_bitmap_region(light_buffer,
+                            player.x - camera_x + (SPRITE_SIZE / 2.0f) - LIGHT_RADIUS, player.y - camera_y + (SPRITE_SIZE / 2.0f) - LIGHT_RADIUS,
+                            LIGHT_RADIUS * 2, LIGHT_RADIUS * 2,
+                            player.x - camera_x + (SPRITE_SIZE / 2.0f) - LIGHT_RADIUS, player.y - camera_y + (SPRITE_SIZE / 2.0f) - LIGHT_RADIUS,
+                            0);
+                al_set_blender(ALLEGRO_ADD, ALLEGRO_ONE, ALLEGRO_INVERSE_ALPHA);
             }
 
-            if (game_over && font)
-            {
+            if (game_over && font) {
                 const char *msg = victory ? "Você venceu!" : "Você perdeu!";
                 al_draw_text(font, al_map_rgb(255, 255, 255), WIDTH / 2, HEIGHT / 2, ALLEGRO_ALIGN_CENTER, msg);
-            } else if (game_over)
-            {
+            } else if (game_over) {
                 printf("Fim de jogo: %s\n", victory ? "Vitória!" : "Derrota!");
             }
 
             al_flip_display();
         }
+    }
 
     // Limpeza
     al_destroy_bitmap(knife_frame);
@@ -1450,8 +1577,8 @@ int main() {
     al_destroy_bitmap(bruno_sprite);
     al_destroy_bitmap(miguel_sprite);
     al_destroy_bitmap(fernando_sprite);
-    al_destroy_bitmap(lucas_sprite);
     al_destroy_bitmap(julia_sprite);
+    al_destroy_bitmap(lucas_sprite);
     al_destroy_bitmap(monica_sprite);
     al_destroy_bitmap(jay_sprite);
     al_destroy_bitmap(amanda_sprite);
@@ -1461,6 +1588,7 @@ int main() {
     al_destroy_bitmap(daniel_sprite);
     al_destroy_bitmap(fisky_sprite);
     al_destroy_bitmap(knife_sprite);
+    al_destroy_bitmap(death_sprite_frame);
     al_destroy_bitmap(censure_sprite);
     al_destroy_bitmap(mirror_sprite);
     al_destroy_bitmap(light_mask);
@@ -1475,4 +1603,4 @@ int main() {
     al_destroy_display(display);
 
     return 0;
-    }
+}
