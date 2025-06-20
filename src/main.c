@@ -31,6 +31,7 @@
 #define SPRITE_ROWS 4
 #define MAP_WIDTH 1280
 #define MAP_HEIGHT 960
+#define NUM_GAMEPLAY_TRACKS 8
 #define NUM_NPCS 15
 #define MIN_NPC_DISTANCE 800
 #define MAX_NPC_DISTANCE 1200
@@ -489,7 +490,7 @@ GameState show_main_menu(ALLEGRO_DISPLAY *display, ALLEGRO_EVENT_QUEUE *queue, A
 
 
 // TELA DO JOGO
-GameState run_gameplay_loop(ALLEGRO_DISPLAY* display, ALLEGRO_EVENT_QUEUE* queue, ALLEGRO_TIMER* timer, ALLEGRO_FONT* font_titulo_grande, ALLEGRO_FONT* font_subtitulo, ALLEGRO_FONT* font_botao, ALLEGRO_BITMAP* censure_sprite, ALLEGRO_BITMAP* knife_frame, ALLEGRO_BITMAP* death_sprite_frame, ALLEGRO_SAMPLE_INSTANCE* hit_instance, ALLEGRO_SAMPLE_INSTANCE* bg_instance, void (*fade_func)(float, int))
+GameState run_gameplay_loop(ALLEGRO_DISPLAY* display, ALLEGRO_EVENT_QUEUE* queue, ALLEGRO_TIMER* timer, ALLEGRO_FONT* font_titulo_grande, ALLEGRO_FONT* font_subtitulo, ALLEGRO_FONT* font_botao, ALLEGRO_BITMAP* censure_sprite, ALLEGRO_BITMAP* knife_frame, ALLEGRO_BITMAP* death_sprite_frame, ALLEGRO_SAMPLE_INSTANCE* hit_instance, ALLEGRO_SAMPLE_INSTANCE* current_gameplay_music_instance, ALLEGRO_SAMPLE_INSTANCE* item_collect_instance, void (*fade_func)(float, int))
 {
     bool gameplay_running = true;
     bool redraw = true;
@@ -503,7 +504,7 @@ GameState run_gameplay_loop(ALLEGRO_DISPLAY* display, ALLEGRO_EVENT_QUEUE* queue
     fade_func(0.7, -1);
 
     // música do jogo, depois da transição
-    if (bg_instance) al_play_sample_instance(bg_instance);
+    if (current_gameplay_music_instance) al_play_sample_instance(current_gameplay_music_instance);
 
 
 
@@ -657,6 +658,7 @@ GameState run_gameplay_loop(ALLEGRO_DISPLAY* display, ALLEGRO_EVENT_QUEUE* queue
                 float dy_mirror = player.y - mirror_item.y;
                 if (sqrt(dx_mirror * dx_mirror + dy_mirror * dy_mirror) < (SPRITE_SIZE / 2))
                 {
+                    if (item_collect_instance) al_play_sample_instance(item_collect_instance);
                     found_mirror = true;
                     mirror_item.active = false;
                     printf("Voce encontrou o espelho!\n");
@@ -899,7 +901,7 @@ GameState run_gameplay_loop(ALLEGRO_DISPLAY* display, ALLEGRO_EVENT_QUEUE* queue
             // Desenhar a tela de Fim de Jogo (se aplicável) e virar o display
             if (game_over)
             {
-                if (bg_instance) al_stop_sample_instance(bg_instance);
+                if (current_gameplay_music_instance) al_stop_sample_instance(current_gameplay_music_instance);
                 al_stop_timer(timer);
                 GameState next_state;
                 if (victory)
@@ -992,8 +994,10 @@ int main()
     // Sons
     ALLEGRO_SAMPLE *hit_sample = NULL;
     ALLEGRO_SAMPLE_INSTANCE *hit_instance = NULL;
-    ALLEGRO_SAMPLE *bg_music = NULL;
-    ALLEGRO_SAMPLE_INSTANCE *bg_instance = NULL;
+    ALLEGRO_SAMPLE *gameplay_music_samples[NUM_GAMEPLAY_TRACKS] = {NULL};
+    ALLEGRO_SAMPLE_INSTANCE *gameplay_music_instances[NUM_GAMEPLAY_TRACKS] = {NULL};
+    ALLEGRO_SAMPLE *item_collect_sample = NULL;
+    ALLEGRO_SAMPLE_INSTANCE *item_collect_instance = NULL;
     ALLEGRO_SAMPLE *menu_music = NULL;
     ALLEGRO_SAMPLE_INSTANCE *menu_instance = NULL;
 
@@ -1015,22 +1019,43 @@ int main()
             }
         }
 
-        bg_music = al_load_sample("../../sons/lavander.wav");
-        if (!bg_music)
-        {
-            fprintf(stderr, "Aviso: Não foi possível carregar música '../../sons/lavander.wav'. Continuando sem música.\n");
-        } else
-        {
-            bg_instance = al_create_sample_instance(bg_music);
-            if (bg_instance)
-            {
-                al_set_sample_instance_playmode(bg_instance, ALLEGRO_PLAYMODE_LOOP);
-                al_attach_sample_instance_to_mixer(bg_instance, al_get_default_mixer());
-            } else
-            {
-                fprintf(stderr, "Aviso: Não foi possível criar instância de música de fundo.\n");
+
+        // Carrega o som de coleta do item
+        item_collect_sample = al_load_sample("../../sons/item_collect.wav");
+        if (!item_collect_sample) {
+            fprintf(stderr, "Aviso: Não foi possível carregar som '../../sons/item_collect.wav'.\n");
+        } else {
+            item_collect_instance = al_create_sample_instance(item_collect_sample);
+            if (item_collect_instance) {
+                al_attach_sample_instance_to_mixer(item_collect_instance, al_get_default_mixer());
             }
         }
+
+        // Carrega as 8 músicas de gameplay em um loop
+        for (int i = 0; i < NUM_GAMEPLAY_TRACKS; i++)
+        {
+            char filename[50];
+            sprintf(filename, "../../sons/track_%d.wav", i + 1); // Cria o nome do arquivo: track_1.wav, track_2.wav, etc.
+
+            gameplay_music_samples[i] = al_load_sample(filename);
+            if (!gameplay_music_samples[i])
+            {
+                fprintf(stderr, "Aviso: Não foi possível carregar música '%s'.\n", filename);
+            } else
+            {
+                gameplay_music_instances[i] = al_create_sample_instance(gameplay_music_samples[i]);
+                if (gameplay_music_instances[i])
+                {
+                    al_set_sample_instance_playmode(gameplay_music_instances[i], ALLEGRO_PLAYMODE_LOOP);
+                    al_attach_sample_instance_to_mixer(gameplay_music_instances[i], al_get_default_mixer());
+                } else
+                {
+                    fprintf(stderr, "Aviso: Não foi possível criar instância para a música '%s'.\n", filename);
+                }
+            }
+        }
+
+
 
         menu_music = al_load_sample("../../sons/omori.wav");
         if (!menu_music)
@@ -1057,8 +1082,10 @@ int main()
         fprintf(stderr, "Erro ao carregar sprite '../../sprites/mia.png'.\n");
         al_destroy_sample_instance(hit_instance);
         al_destroy_sample(hit_sample);
-        al_destroy_sample_instance(bg_instance);
-        al_destroy_sample(bg_music);
+        al_destroy_sample(gameplay_music_samples);
+        al_destroy_sample_instance(gameplay_music_instances);
+        al_destroy_sample(item_collect_sample);
+        al_destroy_sample_instance(item_collect_instance);
         if (font) al_destroy_font(font);
         al_destroy_timer(timer);
         al_destroy_event_queue(queue);
@@ -1073,8 +1100,10 @@ int main()
         al_destroy_bitmap(mia_sprite);
         al_destroy_sample_instance(hit_instance);
         al_destroy_sample(hit_sample);
-        al_destroy_sample_instance(bg_instance);
-        al_destroy_sample(bg_music);
+        al_destroy_sample(gameplay_music_samples);
+        al_destroy_sample_instance(gameplay_music_instances);
+        al_destroy_sample(item_collect_sample);
+        al_destroy_sample_instance(item_collect_instance);
         if (font) al_destroy_font(font);
         al_destroy_timer(timer);
         al_destroy_event_queue(queue);
@@ -1090,8 +1119,10 @@ int main()
         al_destroy_bitmap(lucia_sprite);
         al_destroy_sample_instance(hit_instance);
         al_destroy_sample(hit_sample);
-        al_destroy_sample_instance(bg_instance);
-        al_destroy_sample(bg_music);
+        al_destroy_sample(gameplay_music_samples);
+        al_destroy_sample_instance(gameplay_music_instances);
+        al_destroy_sample(item_collect_sample);
+        al_destroy_sample_instance(item_collect_instance);
         if (font) al_destroy_font(font);
         al_destroy_timer(timer);
         al_destroy_event_queue(queue);
@@ -1108,8 +1139,10 @@ int main()
         al_destroy_bitmap(bruno_sprite);
         al_destroy_sample_instance(hit_instance);
         al_destroy_sample(hit_sample);
-        al_destroy_sample_instance(bg_instance);
-        al_destroy_sample(bg_music);
+        al_destroy_sample(gameplay_music_samples);
+        al_destroy_sample_instance(gameplay_music_instances);
+        al_destroy_sample(item_collect_sample);
+        al_destroy_sample_instance(item_collect_instance);
         if (font) al_destroy_font(font);
         al_destroy_timer(timer);
         al_destroy_event_queue(queue);
@@ -1127,8 +1160,10 @@ int main()
         al_destroy_bitmap(miguel_sprite);
         al_destroy_sample_instance(hit_instance);
         al_destroy_sample(hit_sample);
-        al_destroy_sample_instance(bg_instance);
-        al_destroy_sample(bg_music);
+        al_destroy_sample(gameplay_music_samples);
+        al_destroy_sample_instance(gameplay_music_instances);
+        al_destroy_sample(item_collect_sample);
+        al_destroy_sample_instance(item_collect_instance);
         if (font) al_destroy_font(font);
         al_destroy_timer(timer);
         al_destroy_event_queue(queue);
@@ -1147,8 +1182,10 @@ int main()
         al_destroy_bitmap(fernando_sprite);
         al_destroy_sample_instance(hit_instance);
         al_destroy_sample(hit_sample);
-        al_destroy_sample_instance(bg_instance);
-        al_destroy_sample(bg_music);
+        al_destroy_sample(gameplay_music_samples);
+        al_destroy_sample_instance(gameplay_music_instances);
+        al_destroy_sample(item_collect_sample);
+        al_destroy_sample_instance(item_collect_instance);
         if (font) al_destroy_font(font);
         al_destroy_timer(timer);
         al_destroy_event_queue(queue);
@@ -1168,8 +1205,10 @@ int main()
         al_destroy_bitmap(julia_sprite);
         al_destroy_sample_instance(hit_instance);
         al_destroy_sample(hit_sample);
-        al_destroy_sample_instance(bg_instance);
-        al_destroy_sample(bg_music);
+        al_destroy_sample(gameplay_music_samples);
+        al_destroy_sample_instance(gameplay_music_instances);
+        al_destroy_sample(item_collect_sample);
+        al_destroy_sample_instance(item_collect_instance);
         if (font) al_destroy_font(font);
         al_destroy_timer(timer);
         al_destroy_event_queue(queue);
@@ -1190,8 +1229,10 @@ int main()
         al_destroy_bitmap(julia_sprite);
         al_destroy_sample_instance(hit_instance);
         al_destroy_sample(hit_sample);
-        al_destroy_sample_instance(bg_instance);
-        al_destroy_sample(bg_music);
+        al_destroy_sample(gameplay_music_samples);
+        al_destroy_sample_instance(gameplay_music_instances);
+        al_destroy_sample(item_collect_sample);
+        al_destroy_sample_instance(item_collect_instance);
         if (font) al_destroy_font(font);
         al_destroy_timer(timer);
         al_destroy_event_queue(queue);
@@ -1213,8 +1254,10 @@ int main()
         al_destroy_bitmap(monica_sprite);
         al_destroy_sample_instance(hit_instance);
         al_destroy_sample(hit_sample);
-        al_destroy_sample_instance(bg_instance);
-        al_destroy_sample(bg_music);
+        al_destroy_sample(gameplay_music_samples);
+        al_destroy_sample_instance(gameplay_music_instances);
+        al_destroy_sample(item_collect_sample);
+        al_destroy_sample_instance(item_collect_instance);
         if (font) al_destroy_font(font);
         al_destroy_timer(timer);
         al_destroy_event_queue(queue);
@@ -1237,8 +1280,10 @@ int main()
         al_destroy_bitmap(jay_sprite);
         al_destroy_sample_instance(hit_instance);
         al_destroy_sample(hit_sample);
-        al_destroy_sample_instance(bg_instance);
-        al_destroy_sample(bg_music);
+        al_destroy_sample(gameplay_music_samples);
+        al_destroy_sample_instance(gameplay_music_instances);
+        al_destroy_sample(item_collect_sample);
+        al_destroy_sample_instance(item_collect_instance);
         if (font) al_destroy_font(font);
         al_destroy_timer(timer);
         al_destroy_event_queue(queue);
@@ -1262,8 +1307,10 @@ int main()
         al_destroy_bitmap(amanda_sprite);
         al_destroy_sample_instance(hit_instance);
         al_destroy_sample(hit_sample);
-        al_destroy_sample_instance(bg_instance);
-        al_destroy_sample(bg_music);
+        al_destroy_sample(gameplay_music_samples);
+        al_destroy_sample_instance(gameplay_music_instances);
+        al_destroy_sample(item_collect_sample);
+        al_destroy_sample_instance(item_collect_instance);
         if (font) al_destroy_font(font);
         al_destroy_timer(timer);
         al_destroy_event_queue(queue);
@@ -1288,8 +1335,10 @@ int main()
         al_destroy_bitmap(marcos_sprite);
         al_destroy_sample_instance(hit_instance);
         al_destroy_sample(hit_sample);
-        al_destroy_sample_instance(bg_instance);
-        al_destroy_sample(bg_music);
+        al_destroy_sample(gameplay_music_samples);
+        al_destroy_sample_instance(gameplay_music_instances);
+        al_destroy_sample(item_collect_sample);
+        al_destroy_sample_instance(item_collect_instance);
         if (font) al_destroy_font(font);
         al_destroy_timer(timer);
         al_destroy_event_queue(queue);
@@ -1315,8 +1364,10 @@ int main()
         al_destroy_bitmap(nick_sprite);
         al_destroy_sample_instance(hit_instance);
         al_destroy_sample(hit_sample);
-        al_destroy_sample_instance(bg_instance);
-        al_destroy_sample(bg_music);
+        al_destroy_sample(gameplay_music_samples);
+        al_destroy_sample_instance(gameplay_music_instances);
+        al_destroy_sample(item_collect_sample);
+        al_destroy_sample_instance(item_collect_instance);
         if (font) al_destroy_font(font);
         al_destroy_timer(timer);
         al_destroy_event_queue(queue);
@@ -1343,8 +1394,10 @@ int main()
         al_destroy_bitmap(judite_sprite);
         al_destroy_sample_instance(hit_instance);
         al_destroy_sample(hit_sample);
-        al_destroy_sample_instance(bg_instance);
-        al_destroy_sample(bg_music);
+        al_destroy_sample(gameplay_music_samples);
+        al_destroy_sample_instance(gameplay_music_instances);
+        al_destroy_sample(item_collect_sample);
+        al_destroy_sample_instance(item_collect_instance);
         if (font) al_destroy_font(font);
         al_destroy_timer(timer);
         al_destroy_event_queue(queue);
@@ -1373,8 +1426,10 @@ int main()
         al_destroy_bitmap(daniel_sprite);
         al_destroy_sample_instance(hit_instance);
         al_destroy_sample(hit_sample);
-        al_destroy_sample_instance(bg_instance);
-        al_destroy_sample(bg_music);
+        al_destroy_sample(gameplay_music_samples);
+        al_destroy_sample_instance(gameplay_music_instances);
+        al_destroy_sample(item_collect_sample);
+        al_destroy_sample_instance(item_collect_instance);
         if (font) al_destroy_font(font);
         al_destroy_timer(timer);
         al_destroy_event_queue(queue);
@@ -1404,8 +1459,10 @@ int main()
         al_destroy_bitmap(daniel_sprite);
         al_destroy_sample_instance(hit_instance);
         al_destroy_sample(hit_sample);
-        al_destroy_sample_instance(bg_instance);
-        al_destroy_sample(bg_music);
+        al_destroy_sample(gameplay_music_samples);
+        al_destroy_sample_instance(gameplay_music_instances);
+        al_destroy_sample(item_collect_sample);
+        al_destroy_sample_instance(item_collect_instance);
         if (font) al_destroy_font(font);
         al_destroy_timer(timer);
         al_destroy_event_queue(queue);
@@ -1435,8 +1492,10 @@ int main()
         al_destroy_bitmap(knife_sprite);
         al_destroy_sample_instance(hit_instance);
         al_destroy_sample(hit_sample);
-        al_destroy_sample_instance(bg_instance);
-        al_destroy_sample(bg_music);
+        al_destroy_sample(gameplay_music_samples);
+        al_destroy_sample_instance(gameplay_music_instances);
+        al_destroy_sample(item_collect_sample);
+        al_destroy_sample_instance(item_collect_instance);
         if (font) al_destroy_font(font);
         al_destroy_timer(timer);
         al_destroy_event_queue(queue);
@@ -1466,8 +1525,10 @@ int main()
         al_destroy_bitmap(knife_sprite);
         al_destroy_sample_instance(hit_instance);
         al_destroy_sample(hit_sample);
-        al_destroy_sample_instance(bg_instance);
-        al_destroy_sample(bg_music);
+        al_destroy_sample(gameplay_music_samples);
+        al_destroy_sample_instance(gameplay_music_instances);
+        al_destroy_sample(item_collect_sample);
+        al_destroy_sample_instance(item_collect_instance);
         if (font) al_destroy_font(font);
         al_destroy_timer(timer);
         al_destroy_event_queue(queue);
@@ -1499,8 +1560,10 @@ int main()
         al_destroy_bitmap(death_sprite_frame);
         al_destroy_sample_instance(hit_instance);
         al_destroy_sample(hit_sample);
-        al_destroy_sample_instance(bg_instance);
-        al_destroy_sample(bg_music);
+        al_destroy_sample(gameplay_music_samples);
+        al_destroy_sample_instance(gameplay_music_instances);
+        al_destroy_sample(item_collect_sample);
+        al_destroy_sample_instance(item_collect_instance);
         if (font) al_destroy_font(font);
         al_destroy_timer(timer);
         al_destroy_event_queue(queue);
@@ -1532,8 +1595,10 @@ int main()
         al_destroy_bitmap(death_sprite_frame);
         al_destroy_sample_instance(hit_instance);
         al_destroy_sample(hit_sample);
-        al_destroy_sample_instance(bg_instance);
-        al_destroy_sample(bg_music);
+        al_destroy_sample(gameplay_music_samples);
+        al_destroy_sample_instance(gameplay_music_instances);
+        al_destroy_sample(item_collect_sample);
+        al_destroy_sample_instance(item_collect_instance);
         if (font) al_destroy_font(font);
         al_destroy_timer(timer);
         al_destroy_event_queue(queue);
@@ -1568,8 +1633,10 @@ int main()
         al_destroy_bitmap(mirror_sprite);
         al_destroy_sample_instance(hit_instance);
         al_destroy_sample(hit_sample);
-        al_destroy_sample_instance(bg_instance);
-        al_destroy_sample(bg_music);
+        al_destroy_sample(gameplay_music_samples);
+        al_destroy_sample_instance(gameplay_music_instances);
+        al_destroy_sample(item_collect_sample);
+        al_destroy_sample_instance(item_collect_instance);
         if (font) al_destroy_font(font);
         al_destroy_timer(timer);
         al_destroy_event_queue(queue);
@@ -1603,8 +1670,10 @@ int main()
         al_destroy_bitmap(mirror_sprite);
         al_destroy_sample_instance(hit_instance);
         al_destroy_sample(hit_sample);
-        al_destroy_sample_instance(bg_instance);
-        al_destroy_sample(bg_music);
+        al_destroy_sample(gameplay_music_samples);
+        al_destroy_sample_instance(gameplay_music_instances);
+        al_destroy_sample(item_collect_sample);
+        al_destroy_sample_instance(item_collect_instance);
         if (font) al_destroy_font(font);
         al_destroy_timer(timer);
         al_destroy_event_queue(queue);
@@ -1640,8 +1709,10 @@ int main()
         al_destroy_bitmap(mirror_sprite);
         al_destroy_sample_instance(hit_instance);
         al_destroy_sample(hit_sample);
-        al_destroy_sample_instance(bg_instance);
-        al_destroy_sample(bg_music);
+        al_destroy_sample(gameplay_music_samples);
+        al_destroy_sample_instance(gameplay_music_instances);
+        al_destroy_sample(item_collect_sample);
+        al_destroy_sample_instance(item_collect_instance);
         if (font) al_destroy_font(font);
         al_destroy_timer(timer);
         al_destroy_event_queue(queue);
@@ -1678,8 +1749,10 @@ int main()
         al_destroy_bitmap(mirror_sprite);
         al_destroy_sample_instance(hit_instance);
         al_destroy_sample(hit_sample);
-        al_destroy_sample_instance(bg_instance);
-        al_destroy_sample(bg_music);
+        al_destroy_sample(gameplay_music_samples);
+        al_destroy_sample_instance(gameplay_music_instances);
+        al_destroy_sample(item_collect_sample);
+        al_destroy_sample_instance(item_collect_instance);
         if (font) al_destroy_font(font);
         al_destroy_timer(timer);
         al_destroy_event_queue(queue);
@@ -1717,8 +1790,10 @@ int main()
         al_destroy_bitmap(mirror_sprite);
         al_destroy_sample_instance(hit_instance);
         al_destroy_sample(hit_sample);
-        al_destroy_sample_instance(bg_instance);
-        al_destroy_sample(bg_music);
+        al_destroy_sample(gameplay_music_samples);
+        al_destroy_sample_instance(gameplay_music_instances);
+        al_destroy_sample(item_collect_sample);
+        al_destroy_sample_instance(item_collect_instance);
         if (font) al_destroy_font(font);
         al_destroy_timer(timer);
         al_destroy_event_queue(queue);
@@ -1757,8 +1832,10 @@ int main()
         al_destroy_bitmap(mirror_sprite);
         al_destroy_sample_instance(hit_instance);
         al_destroy_sample(hit_sample);
-        al_destroy_sample_instance(bg_instance);
-        al_destroy_sample(bg_music);
+        al_destroy_sample(gameplay_music_samples);
+        al_destroy_sample_instance(gameplay_music_instances);
+        al_destroy_sample(item_collect_sample);
+        al_destroy_sample_instance(item_collect_instance);
         if (font) al_destroy_font(font);
         al_destroy_timer(timer);
         al_destroy_event_queue(queue);
@@ -1798,8 +1875,13 @@ int main()
         al_destroy_bitmap(mirror_sprite);
         al_destroy_sample_instance(hit_instance);
         al_destroy_sample(hit_sample);
-        al_destroy_sample_instance(bg_instance);
-        al_destroy_sample(bg_music);
+        al_destroy_sample(gameplay_music_samples);
+        al_destroy_sample_instance(gameplay_music_instances);
+        al_destroy_sample(item_collect_sample);
+        al_destroy_sample_instance(item_collect_instance);
+        al_destroy_sample_instance(item_collect_instance);
+        al_destroy_sample(item_collect_sample);
+
         if (font) al_destroy_font(font);
         al_destroy_timer(timer);
         al_destroy_event_queue(queue);
@@ -1866,8 +1948,17 @@ int main()
         {
             reset_game_state(); // Reseta o jogo para uma nova partida
             al_start_timer(timer); // Inicia o timer do jogo
-            current_state = run_gameplay_loop(display, queue, timer, font_titulo_grande, font_subtitulo, font_botao, censure_sprite, knife_frame, death_sprite_frame, hit_instance, bg_instance, perform_fade);
+
+            // >>> MUDANÇA AQUI: Escolhe uma música aleatória para a partida <<<
+            int track_index = rand() % NUM_GAMEPLAY_TRACKS;
+            ALLEGRO_SAMPLE_INSTANCE* chosen_music = gameplay_music_instances[track_index];
+
+            current_state = run_gameplay_loop(display, queue, timer, font_titulo_grande, font_subtitulo, font_botao, censure_sprite, knife_frame, death_sprite_frame, hit_instance, chosen_music, item_collect_instance, perform_fade);
+
             al_stop_timer(timer); // Para o timer ao voltar para o menu
+
+            // >>> MUDANÇA AQUI: Garante que a música da partida parou <<<
+            if (chosen_music) al_stop_sample_instance(chosen_music);
 
         }else if (current_state == STATE_EXITING)
         {
@@ -1907,14 +1998,19 @@ int main()
     al_destroy_bitmap(light_buffer);
     al_destroy_sample_instance(hit_instance);
     al_destroy_sample(hit_sample);
-    al_destroy_sample_instance(bg_instance);
-    al_destroy_sample(bg_music);
+    al_destroy_sample(gameplay_music_samples);
+    al_destroy_sample_instance(gameplay_music_instances);
+    al_destroy_sample(item_collect_sample);
+    al_destroy_sample_instance(item_collect_instance);
     al_destroy_sample_instance(menu_instance);
     al_destroy_sample(menu_music);
     if (font) al_destroy_font(font);
     al_destroy_timer(timer);
     al_destroy_event_queue(queue);
     al_destroy_display(display);
+
+    return 0;
+}
 
     return 0;
 }
