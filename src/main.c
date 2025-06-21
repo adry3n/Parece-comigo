@@ -97,7 +97,7 @@ typedef enum {
         {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
         {0,4,3,3,3,3,5,0,4,3,3,3,3,5,0,4,3,3,3,3,3,3,5,0,4,3,3,3,3,3,5,0},
         {0,1,6,2,0,1,2,0,0,0,1,2,0,0,0,0,0,0,0,0,1,2,0,0,1,6,6,6,6,6,2,0},
-        {0,1,0,2,0,1,2,0,4,3,6,6,3,5,0,4,3,3,3,3,3,3,3,3,6,0,0,0,0,0,2,0},
+        {0,1,0,2,0,1,2,0,4,3,6,6,3,5,0,4,3,3,3,3,6,6,3,3,6,0,0,0,0,0,2,0},
         {0,0,0,0,0,1,2,0,0,0,1,6,6,6,3,6,6,6,6,6,2,0,0,0,0,0,4,3,5,0,2,0},
         {0,4,3,3,3,6,6,3,5,0,1,2,0,1,2,0,0,0,0,1,2,0,4,0,4,3,2,0,1,0,2,0},
         {0,1,0,6,0,0,0,6,2,0,1,2,0,1,2,0,4,3,3,6,2,0,1,3,6,6,2,0,1,3,2,0},
@@ -162,7 +162,7 @@ typedef enum {
         float step_y = dy / distance;
 
         // define um tamanho de passo para a verificação.
-        // um valor menor é mais preciso
+        // valor menor = mais preciso
         float step_size = TILE_SIZE / 2.0f;
 
         // "Caminha" ao longo da linha do ponto 1 para o ponto 2
@@ -352,7 +352,6 @@ GameState show_main_menu(ALLEGRO_DISPLAY *display, ALLEGRO_EVENT_QUEUE *queue, A
     float instructions_y = play_y + button_h + button_spacing;
     float exit_x = play_x;
     float exit_y = instructions_y + button_h + button_spacing;
-    // FIM DA PARTE A SER CORRIGIDA
 
     while (true)
     {
@@ -447,7 +446,7 @@ GameState show_end_screen(ALLEGRO_DISPLAY *display, ALLEGRO_EVENT_QUEUE *queue, 
                 done = true;
                 restart_game = (selected_option == 0);
             }
-        } // <--- FIM DO "ELSE IF". O CÓDIGO DE DESENHO NÃO PERTENCE AQUI.
+        }
 
         // Conteudos na tela
         al_draw_filled_rectangle(0, 0, WIDTH, HEIGHT, al_map_rgba_f(0, 0, 0, 0.6));
@@ -581,7 +580,7 @@ GameState run_gameplay_loop(ALLEGRO_DISPLAY* display, ALLEGRO_EVENT_QUEUE* queue
     // desespero
     {"Por favor", "Isso tem que parar", "O que eu fiz pra merecer isso?", "Ficar preso com um impostor", "Nao, nao, nao...", "Nao quero machucar ninguem,", "Preciso escapar daquilo", "..."},
     // confusão
-    {"Queem sou eu?", "E quem e... ele?", "Se ele sou eu...", "Quem e o original?", "Nossos rostos...", "Sao os mesmos", "Vou acabar com isso", "So um e real"},
+    {"Quem sou eu?", "E quem e... ele?", "Se ele sou eu...", "Quem e o original?", "Nossos rostos...", "Sao os mesmos", "Vou acabar com isso", "So um e o real"},
     // reflexão
     {"Ah...", "Entao eu sou assim", "Essa sombra... me segue", "Sempre esteve aqui", "Eu so nao queria ver", "Nao tem mais pra onde fugir", "Preciso acabar...", "...Com isso"}
     };
@@ -758,6 +757,7 @@ GameState run_gameplay_loop(ALLEGRO_DISPLAY* display, ALLEGRO_EVENT_QUEUE* queue
                         mirror_item.active = false;
                         printf("Voce encontrou o espelho!\n");
 
+                        // parte do dialogo logo apos pegar espelho
                         is_in_dialogue = true;
                         chosen_voice_index = rand() % NUM_VOICE_SOUNDS;
 
@@ -878,7 +878,7 @@ GameState run_gameplay_loop(ALLEGRO_DISPLAY* display, ALLEGRO_EVENT_QUEUE* queue
                         chars_to_draw++;
                     }
                 }
-                else // A frase atual terminou de ser digitada
+                else // a frase atual terminou de ser digitada
                 {
                 // parar som que tava tocando em loop
                     if (chosen_voice_index != -1 && voice_instances[chosen_voice_index]) {
@@ -901,7 +901,7 @@ GameState run_gameplay_loop(ALLEGRO_DISPLAY* display, ALLEGRO_EVENT_QUEUE* queue
                         }
                         else // se não acabou, prepara e inicia o som p proxima frase
                         {
-                        // 5. inicia o som da nova frase
+                        // inicia o som da nova frase
                             if (chosen_voice_index != -1 && voice_instances[chosen_voice_index]) {
                                 al_play_sample_instance(voice_instances[chosen_voice_index]);
                             }
@@ -1019,7 +1019,6 @@ GameState run_gameplay_loop(ALLEGRO_DISPLAY* display, ALLEGRO_EVENT_QUEUE* queue
             al_set_target_backbuffer(display);
             al_clear_to_color(al_map_rgb(0, 0, 0));
 
-
             // Desenhar iluminção
             if (light_mask)
             {
@@ -1095,7 +1094,7 @@ GameState run_gameplay_loop(ALLEGRO_DISPLAY* display, ALLEGRO_EVENT_QUEUE* queue
 
 
 
-            // Desenhar a tela de Fim de Jogo (se aplicável) e virar o display
+            // Desenhar a tela de Fim de Jogo e virar o display
             if (game_over)
             {
                 // Parar todos os sons ativos do gameplay
@@ -1319,6 +1318,9 @@ int main()
         al_destroy_sample_instance(voice_instances);
         al_destroy_sample(menu_music);
         al_destroy_sample_instance(menu_instance);
+        al_destroy_font(font_titulo_grande);
+        al_destroy_font(font_subtitulo);
+        al_destroy_font(font_botao);
         al_destroy_timer(timer);
         al_destroy_event_queue(queue);
         al_destroy_display(display);
@@ -1340,6 +1342,9 @@ int main()
         al_destroy_sample_instance(voice_instances);
         al_destroy_sample(menu_music);
         al_destroy_sample_instance(menu_instance);
+        al_destroy_font(font_titulo_grande);
+        al_destroy_font(font_subtitulo);
+        al_destroy_font(font_botao);
         al_destroy_timer(timer);
         al_destroy_event_queue(queue);
         al_destroy_display(display);
@@ -1362,6 +1367,9 @@ int main()
         al_destroy_sample_instance(voice_instances);
         al_destroy_sample(menu_music);
         al_destroy_sample_instance(menu_instance);
+        al_destroy_font(font_titulo_grande);
+        al_destroy_font(font_subtitulo);
+        al_destroy_font(font_botao);
         al_destroy_timer(timer);
         al_destroy_event_queue(queue);
         al_destroy_display(display);
@@ -1385,6 +1393,9 @@ int main()
         al_destroy_sample_instance(voice_instances);
         al_destroy_sample(menu_music);
         al_destroy_sample_instance(menu_instance);
+        al_destroy_font(font_titulo_grande);
+        al_destroy_font(font_subtitulo);
+        al_destroy_font(font_botao);
         al_destroy_timer(timer);
         al_destroy_event_queue(queue);
         al_destroy_display(display);
@@ -1409,6 +1420,9 @@ int main()
         al_destroy_sample_instance(voice_instances);
         al_destroy_sample(menu_music);
         al_destroy_sample_instance(menu_instance);
+        al_destroy_font(font_titulo_grande);
+        al_destroy_font(font_subtitulo);
+        al_destroy_font(font_botao);
         al_destroy_timer(timer);
         al_destroy_event_queue(queue);
         al_destroy_display(display);
@@ -1434,6 +1448,9 @@ int main()
         al_destroy_sample_instance(voice_instances);
         al_destroy_sample(menu_music);
         al_destroy_sample_instance(menu_instance);
+        al_destroy_font(font_titulo_grande);
+        al_destroy_font(font_subtitulo);
+        al_destroy_font(font_botao);
         al_destroy_timer(timer);
         al_destroy_event_queue(queue);
         al_destroy_display(display);
@@ -1460,6 +1477,9 @@ int main()
         al_destroy_sample_instance(voice_instances);
         al_destroy_sample(menu_music);
         al_destroy_sample_instance(menu_instance);
+        al_destroy_font(font_titulo_grande);
+        al_destroy_font(font_subtitulo);
+        al_destroy_font(font_botao);
         al_destroy_timer(timer);
         al_destroy_event_queue(queue);
         al_destroy_display(display);
@@ -1487,6 +1507,9 @@ int main()
         al_destroy_sample_instance(voice_instances);
         al_destroy_sample(menu_music);
         al_destroy_sample_instance(menu_instance);
+        al_destroy_font(font_titulo_grande);
+        al_destroy_font(font_subtitulo);
+        al_destroy_font(font_botao);
         al_destroy_timer(timer);
         al_destroy_event_queue(queue);
         al_destroy_display(display);
@@ -1515,6 +1538,9 @@ int main()
         al_destroy_sample_instance(voice_instances);
         al_destroy_sample(menu_music);
         al_destroy_sample_instance(menu_instance);
+        al_destroy_font(font_titulo_grande);
+        al_destroy_font(font_subtitulo);
+        al_destroy_font(font_botao);
         al_destroy_timer(timer);
         al_destroy_event_queue(queue);
         al_destroy_display(display);
@@ -1544,6 +1570,9 @@ int main()
         al_destroy_sample_instance(voice_instances);
         al_destroy_sample(menu_music);
         al_destroy_sample_instance(menu_instance);
+        al_destroy_font(font_titulo_grande);
+        al_destroy_font(font_subtitulo);
+        al_destroy_font(font_botao);
         al_destroy_timer(timer);
         al_destroy_event_queue(queue);
         al_destroy_display(display);
@@ -1574,6 +1603,9 @@ int main()
         al_destroy_sample_instance(voice_instances);
         al_destroy_sample(menu_music);
         al_destroy_sample_instance(menu_instance);
+        al_destroy_font(font_titulo_grande);
+        al_destroy_font(font_subtitulo);
+        al_destroy_font(font_botao);
         al_destroy_timer(timer);
         al_destroy_event_queue(queue);
         al_destroy_display(display);
@@ -1605,6 +1637,9 @@ int main()
         al_destroy_sample_instance(voice_instances);
         al_destroy_sample(menu_music);
         al_destroy_sample_instance(menu_instance);
+        al_destroy_font(font_titulo_grande);
+        al_destroy_font(font_subtitulo);
+        al_destroy_font(font_botao);
         al_destroy_timer(timer);
         al_destroy_event_queue(queue);
         al_destroy_display(display);
@@ -1637,6 +1672,9 @@ int main()
         al_destroy_sample_instance(voice_instances);
         al_destroy_sample(menu_music);
         al_destroy_sample_instance(menu_instance);
+        al_destroy_font(font_titulo_grande);
+        al_destroy_font(font_subtitulo);
+        al_destroy_font(font_botao);
         al_destroy_timer(timer);
         al_destroy_event_queue(queue);
         al_destroy_display(display);
@@ -1670,6 +1708,9 @@ int main()
         al_destroy_sample_instance(voice_instances);
         al_destroy_sample(menu_music);
         al_destroy_sample_instance(menu_instance);
+        al_destroy_font(font_titulo_grande);
+        al_destroy_font(font_subtitulo);
+        al_destroy_font(font_botao);
         al_destroy_timer(timer);
         al_destroy_event_queue(queue);
         al_destroy_display(display);
@@ -1705,6 +1746,9 @@ int main()
         al_destroy_sample_instance(voice_instances);
         al_destroy_sample(menu_music);
         al_destroy_sample_instance(menu_instance);
+        al_destroy_font(font_titulo_grande);
+        al_destroy_font(font_subtitulo);
+        al_destroy_font(font_botao);
         al_destroy_timer(timer);
         al_destroy_event_queue(queue);
         al_destroy_display(display);
@@ -1741,6 +1785,9 @@ int main()
         al_destroy_sample_instance(voice_instances);
         al_destroy_sample(menu_music);
         al_destroy_sample_instance(menu_instance);
+        al_destroy_font(font_titulo_grande);
+        al_destroy_font(font_subtitulo);
+        al_destroy_font(font_botao);
         al_destroy_timer(timer);
         al_destroy_event_queue(queue);
         al_destroy_display(display);
@@ -1777,6 +1824,9 @@ int main()
         al_destroy_sample_instance(voice_instances);
         al_destroy_sample(menu_music);
         al_destroy_sample_instance(menu_instance);
+        al_destroy_font(font_titulo_grande);
+        al_destroy_font(font_subtitulo);
+        al_destroy_font(font_botao);
         al_destroy_timer(timer);
         al_destroy_event_queue(queue);
         al_destroy_display(display);
@@ -1813,6 +1863,9 @@ int main()
         al_destroy_sample_instance(voice_instances);
         al_destroy_sample(menu_music);
         al_destroy_sample_instance(menu_instance);
+        al_destroy_font(font_titulo_grande);
+        al_destroy_font(font_subtitulo);
+        al_destroy_font(font_botao);
         al_destroy_timer(timer);
         al_destroy_event_queue(queue);
         al_destroy_display(display);
@@ -1851,6 +1904,9 @@ int main()
         al_destroy_sample_instance(voice_instances);
         al_destroy_sample(menu_music);
         al_destroy_sample_instance(menu_instance);
+        al_destroy_font(font_titulo_grande);
+        al_destroy_font(font_subtitulo);
+        al_destroy_font(font_botao);
         al_destroy_timer(timer);
         al_destroy_event_queue(queue);
         al_destroy_display(display);
@@ -1889,6 +1945,9 @@ int main()
         al_destroy_sample_instance(voice_instances);
         al_destroy_sample(menu_music);
         al_destroy_sample_instance(menu_instance);
+        al_destroy_font(font_titulo_grande);
+        al_destroy_font(font_subtitulo);
+        al_destroy_font(font_botao);
         al_destroy_timer(timer);
         al_destroy_event_queue(queue);
         al_destroy_display(display);
@@ -1930,6 +1989,9 @@ int main()
         al_destroy_sample_instance(voice_instances);
         al_destroy_sample(menu_music);
         al_destroy_sample_instance(menu_instance);
+        al_destroy_font(font_titulo_grande);
+        al_destroy_font(font_subtitulo);
+        al_destroy_font(font_botao);
         al_destroy_timer(timer);
         al_destroy_event_queue(queue);
         al_destroy_display(display);
@@ -1970,6 +2032,9 @@ int main()
         al_destroy_sample_instance(voice_instances);
         al_destroy_sample(menu_music);
         al_destroy_sample_instance(menu_instance);
+        al_destroy_font(font_titulo_grande);
+        al_destroy_font(font_subtitulo);
+        al_destroy_font(font_botao);
         al_destroy_timer(timer);
         al_destroy_event_queue(queue);
         al_destroy_display(display);
@@ -2012,6 +2077,9 @@ int main()
         al_destroy_sample_instance(voice_instances);
         al_destroy_sample(menu_music);
         al_destroy_sample_instance(menu_instance);
+        al_destroy_font(font_titulo_grande);
+        al_destroy_font(font_subtitulo);
+        al_destroy_font(font_botao);
         al_destroy_timer(timer);
         al_destroy_event_queue(queue);
         al_destroy_display(display);
@@ -2055,6 +2123,9 @@ int main()
         al_destroy_sample_instance(voice_instances);
         al_destroy_sample(menu_music);
         al_destroy_sample_instance(menu_instance);
+        al_destroy_font(font_titulo_grande);
+        al_destroy_font(font_subtitulo);
+        al_destroy_font(font_botao);
         al_destroy_timer(timer);
         al_destroy_event_queue(queue);
         al_destroy_display(display);
@@ -2099,6 +2170,9 @@ int main()
         al_destroy_sample_instance(voice_instances);
         al_destroy_sample(menu_music);
         al_destroy_sample_instance(menu_instance);
+        al_destroy_font(font_titulo_grande);
+        al_destroy_font(font_subtitulo);
+        al_destroy_font(font_botao);
         al_destroy_timer(timer);
         al_destroy_event_queue(queue);
         al_destroy_display(display);
@@ -2144,6 +2218,9 @@ int main()
         al_destroy_sample_instance(voice_instances);
         al_destroy_sample(menu_music);
         al_destroy_sample_instance(menu_instance);
+        al_destroy_font(font_titulo_grande);
+        al_destroy_font(font_subtitulo);
+        al_destroy_font(font_botao);
         al_destroy_timer(timer);
         al_destroy_event_queue(queue);
         al_destroy_display(display);
@@ -2190,6 +2267,9 @@ int main()
         al_destroy_sample_instance(voice_instances);
         al_destroy_sample(menu_music);
         al_destroy_sample_instance(menu_instance);
+        al_destroy_font(font_titulo_grande);
+        al_destroy_font(font_subtitulo);
+        al_destroy_font(font_botao);
         al_destroy_timer(timer);
         al_destroy_event_queue(queue);
         al_destroy_display(display);
@@ -2318,6 +2398,9 @@ int main()
     al_destroy_sample_instance(voice_instances);
     al_destroy_sample(menu_music);
     al_destroy_sample_instance(menu_instance);
+    al_destroy_font(font_titulo_grande);
+    al_destroy_font(font_subtitulo);
+    al_destroy_font(font_botao);
     al_destroy_timer(timer);
     al_destroy_event_queue(queue);
     al_destroy_display(display);
