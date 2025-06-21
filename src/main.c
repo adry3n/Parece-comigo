@@ -1,10 +1,10 @@
-//wall.png valor 0.
-//left_shadow_floor.png (3 variações) valor 1.
-//right_shadow_floor.png (3 variações) valor 2.
-//top_shadow_floor.png (2 variações) valor 3.
-//top_left_shadow_floor.png (40x40 pixels, 1 variação) valor 4.
-//top_right_shadow_floor.png (40x40 pixels, 1 variação) valor 5.
-//floor.png (6 variações) valor 6.
+//wall.png valor 0
+//left_shadow_floor.png (3 variações) valor 1
+//right_shadow_floor.png (3 variações) valor 2
+//top_shadow_floor.png (2 variações) valor 3
+//top_left_shadow_floor.png (40x40 pixels, 1 variação) valor 4
+//top_right_shadow_floor.png (40x40 pixels, 1 variação) valor 5
+//floor.png (6 variações) valor 6
 
 #define _USE_MATH_DEFINES
 #include <allegro5/allegro.h>
@@ -29,9 +29,12 @@
 #define SPRITE_SIZE 48
 #define SPRITE_COLS 3
 #define SPRITE_ROWS 4
+#define PHRASES_PER_SET 8
+#define NUM_DIALOGUE_SETS 5
 #define MAP_WIDTH 1280
 #define MAP_HEIGHT 960
-#define NUM_GAMEPLAY_TRACKS 8
+#define NUM_GAMEPLAY_TRACKS 7 // numero de musicas durante o jogo
+#define NUM_VOICE_SOUNDS 6 // Numero de vozes
 #define NUM_NPCS 15
 #define MIN_NPC_DISTANCE 800
 #define MAX_NPC_DISTANCE 1200
@@ -43,7 +46,7 @@
 #define LIGHT_RADIUS 125      // Raio do círculo de luz
 #define AMBIENT_DARKNESS 0.95f  // Escuridão do ambiente (0.0 = claro, 1.0 = preto)
 
-
+// struck das entidades
 typedef struct {
     float x, y;
     int frame, movement;
@@ -56,6 +59,7 @@ typedef struct {
     float death_timer; // Contador para a animação de morte. 0 = não morrendo. >0 = morrendo.
 } Entity;
 
+// struck para a faca
 typedef struct {
     float x, y;              // Posição da faca (relativa ao jogador)
     int frame;               // Quadro da animação
@@ -64,20 +68,22 @@ typedef struct {
     ALLEGRO_BITMAP *sprite_sheet; // Sprite da faca
 } Knife;
 
-// STRUCT PRA ITENS
+// struck para os itens
 typedef struct {
     float x, y;
     bool active;
     ALLEGRO_BITMAP *sprite;
 } Item;
 
-
+// struck para as telas
 typedef enum {
     STATE_MAIN_MENU,
     STATE_GAMEPLAY,
+    STATE_INSTRUCTIONS,
     STATE_EXITING
 } GameState;
 
+// declarações
     Entity player;
     Entity npcs[NUM_NPCS];
     Knife knife;
@@ -87,7 +93,7 @@ typedef enum {
     bool found_mirror = false;
     ALLEGRO_BITMAP *character_sprites[NUM_NPCS];
 
-
+// matriz do mapa
     int map[TILE_ROWS][TILE_COLS] = {
         {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
         {0,4,3,3,3,3,5,0,4,3,3,3,3,5,0,4,3,3,3,3,3,3,5,0,4,3,3,3,3,3,5,0},
@@ -110,8 +116,8 @@ typedef enum {
         {0,1,6,6,6,2,0,4,3,3,5,0,4,3,2,0,1,6,6,2,0,0,1,2,0,0,6,6,6,0,2,0},
         {0,1,0,0,0,2,0,1,6,6,2,0,1,6,2,0,1,6,6,6,5,0,1,6,5,0,2,0,0,0,0,0},
         {0,1,3,5,0,2,0,0,0,1,2,0,1,0,0,0,0,0,6,0,1,6,6,6,2,0,2,0,1,0,5,0},
-        {0,1,2,0,0,2,5,0,4,2,0,0,1,0,4,3,5,0,0,0,1,2,0,0,0,0,2,0,1,0,2,0},
-        {0,1,6,5,0,2,6,3,6,6,3,3,6,3,6,6,6,3,3,3,6,6,3,3,3,3,6,6,6,6,2,0},
+        {0,1,2,0,0,1,5,0,4,2,0,0,1,0,4,3,5,0,0,0,1,2,0,0,0,0,2,0,1,0,2,0},
+        {0,1,6,5,0,1,6,3,6,6,3,3,6,3,6,6,6,3,3,3,6,6,3,3,3,3,6,6,6,6,2,0},
         {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}
 };
 
@@ -152,12 +158,12 @@ typedef enum {
             return true; // Os pontos são os mesmos, linha de visão clara.
         }
 
-    // Normaliza o vetor de direção
+    // normaliza o vetor de direção
         float step_x = dx / distance;
         float step_y = dy / distance;
 
-        // Define um tamanho de passo para a verificação.
-        // Um valor menor é mais preciso, mas mais lento. Metade do tamanho de um tile é um bom começo.
+        // define um tamanho de passo para a verificação.
+        // um valor menor é mais preciso
         float step_size = TILE_SIZE / 2.0f;
 
         // "Caminha" ao longo da linha do ponto 1 para o ponto 2
@@ -165,26 +171,26 @@ typedef enum {
             float current_x = x1 + i * step_x;
             float current_y = y1 + i * step_y;
 
-        // Pega as coordenadas do tile no ponto atual da linha
+        // pega as coordenadas do tile no ponto atual da linha
             int tile_x = (int)(current_x / TILE_SIZE);
             int tile_y = (int)(current_y / TILE_SIZE);
 
-        // Verifica se as coordenadas estão dentro do mapa
+        // verifica se as coordenadas estão dentro do mapa
             if (tile_x < 0 || tile_x >= TILE_COLS || tile_y < 0 || tile_y >= TILE_ROWS) {
                 return false; // Fora do mapa é considerado bloqueado
             }
 
-        // Se o tile atual é uma parede (valor 0), a linha de visão está bloqueada.
+        // se o tile atual é uma parede (valor 0), a linha de visão está bloqueada.
             if (map[tile_y][tile_x] == 0) {
                 return false;
             }
         }
 
-    // Se loop terminar = nenhuma parede encontrada no caminho.
+    // se loop terminar = nenhuma parede encontrada no caminho.
     return true;
     }
 
-// Função para encontrar uma posição de spawn válida
+// função para encontrar uma posição de spawn válida
     typedef struct {
         int row, col;
     } TilePosition;
@@ -194,7 +200,7 @@ typedef enum {
         static int valid_tile_count = 0;
         static bool initialized = false;
 
-    // Inicializar lista de tiles válidos
+    // inicializar lista de tiles válidos
     if (!initialized)
     {
         for (int row = 0; row < TILE_ROWS; row++) {
@@ -208,19 +214,19 @@ typedef enum {
         }
         initialized = true;
     }
-
     if (valid_tile_count == 0) {
         fprintf(stderr, "Erro: Nenhum tile válido para spawn.\n");
         *x = player_x;
         *y = player_y;
         return;
     }
-
-    if (is_clone) {
+    if (is_clone)
+    {
         // Para o clone, spawn a uma distância específica
         int attempts = 0;
         const int max_attempts = 50;
-        while (attempts < max_attempts) {
+        while (attempts < max_attempts)
+        {
             float angle = (float)(rand() % 360) * M_PI / 180.0;
             float distance = MIN_NPC_DISTANCE + (float)(rand() % (MAX_NPC_DISTANCE - MIN_NPC_DISTANCE));
             float temp_x = player_x + distance * cos(angle);
@@ -234,14 +240,15 @@ typedef enum {
         }
     }
 
-    // Escolher um tile válido aleatoriamente
+    // escolher um tile válido aleatoriamente
     int index = rand() % valid_tile_count;
     *x = valid_tiles[index].col * TILE_SIZE + (TILE_SIZE - SPRITE_SIZE) / 2;
     *y = valid_tiles[index].row * TILE_SIZE + (TILE_SIZE - SPRITE_SIZE) / 2;
 }
 
 // máscara de luz
-    void create_light_mask() {
+    void create_light_mask()
+    {
         int radius = LIGHT_RADIUS;
         light_mask = al_create_bitmap(radius * 2, radius * 2);
         if (!light_mask) {
@@ -261,7 +268,7 @@ typedef enum {
 
 
 
-void reset_game_state() // Função pra "nova partida"
+void reset_game_state() // Função pra nova partida
 {
     player.sprite_sheet = character_sprites[rand() % NUM_NPCS];
 
@@ -332,19 +339,24 @@ void perform_fade(float duration, int direction) // fade na transição
 //  TELA INICIAL
 GameState show_main_menu(ALLEGRO_DISPLAY *display, ALLEGRO_EVENT_QUEUE *queue, ALLEGRO_FONT *titulo_grande, ALLEGRO_FONT *btn_font, void (*fade_func)(float, int))
 {
-    int selected_option = 0; // 0: Jogar, 1: Sair
-    const int total_options = 2;
+    int selected_option = 0; // 0: jogar, 1: sair
+    const int total_options = 3; // jogar, instruções e sair
+
     float button_w = 300, button_h = 50;
-    float start_y = HEIGHT / 2 - 5;
     float button_spacing = 15;
+
+    // posições de todos os botões
+    float start_y = HEIGHT / 2 - button_h;
     float play_x = WIDTH / 2 - button_w / 2;
     float play_y = start_y;
+    float instructions_x = play_x;
+    float instructions_y = play_y + button_h + button_spacing;
+    float exit_x = play_x;
+    float exit_y = instructions_y + button_h + button_spacing;
+    // FIM DA PARTE A SER CORRIGIDA
 
-    // Posição do botão Sair ajustada
-    float exit_x = WIDTH / 2 - button_w / 2;
-    float exit_y = play_y + button_h + button_spacing;
-
-    while (true) {
+    while (true)
+    {
         ALLEGRO_EVENT ev; // eventos possiveis
         al_wait_for_event(queue, &ev);
 
@@ -353,53 +365,60 @@ GameState show_main_menu(ALLEGRO_DISPLAY *display, ALLEGRO_EVENT_QUEUE *queue, A
 
         } else if (ev.type == ALLEGRO_EVENT_KEY_DOWN) // segurar tecla
         {
-            if (ev.keyboard.keycode == ALLEGRO_KEY_W || ev.keyboard.keycode == ALLEGRO_KEY_UP || ev.keyboard.keycode == ALLEGRO_KEY_S || ev.keyboard.keycode == ALLEGRO_KEY_DOWN) {
+
+            if (ev.keyboard.keycode == ALLEGRO_KEY_W || ev.keyboard.keycode == ALLEGRO_KEY_UP) // mover
+            {
+                selected_option = (selected_option - 1 + total_options) % total_options;
+            }
+            if (ev.keyboard.keycode == ALLEGRO_KEY_S || ev.keyboard.keycode == ALLEGRO_KEY_DOWN) //
+            {
                 selected_option = (selected_option + 1) % total_options;
             }
-            if (ev.keyboard.keycode == ALLEGRO_KEY_ENTER || ev.keyboard.keycode == ALLEGRO_KEY_SPACE) {
-                fade_func(0.7, 1); // Fade-out
-                if (selected_option == 0) return STATE_GAMEPLAY; // Jogar
-                if (selected_option == 1) return STATE_EXITING;  // Sair
+            if (ev.keyboard.keycode == ALLEGRO_KEY_ENTER || ev.keyboard.keycode == ALLEGRO_KEY_SPACE) // apertar space
+            {
+                if (selected_option != 1) fade_func(0.7, 1); // fade-out, exceto para instruções
+                if (selected_option == 0) return STATE_GAMEPLAY;     // jogar
+                if (selected_option == 1) return STATE_INSTRUCTIONS; // instruções
+                if (selected_option == 2) return STATE_EXITING;      // sair
             }
 
-        } else if (ev.type == ALLEGRO_EVENT_MOUSE_BUTTON_DOWN) // click do mouse
-        {
-            if (ev.mouse.x >= play_x && ev.mouse.x <= play_x + button_w && ev.mouse.y >= play_y && ev.mouse.y <= play_y + button_h) {
-                fade_func(0.7, 1); // Fade-out
-                return STATE_GAMEPLAY;
-            }
-            if (ev.mouse.x >= exit_x && ev.mouse.x <= exit_x + button_w && ev.mouse.y >= exit_y && ev.mouse.y <= exit_y + button_h) {
-                fade_func(0.7, 1); // Fade-out
-                return STATE_EXITING;
-            }
         }
 
-        // Conteudos na tela
+       // Conteudos na tela
         al_clear_to_color(al_map_rgb(0, 0, 0));
         al_draw_text(titulo_grande, al_map_rgb(255, 255, 255), WIDTH / 2, HEIGHT / 4, ALLEGRO_ALIGN_CENTER, "Parece Comigo");
 
+        // Botão Jogar
         al_draw_filled_rectangle(play_x, play_y, play_x + button_w, play_y + button_h, al_map_rgb(50, 50, 50));
         al_draw_text(btn_font, al_map_rgb(255, 255, 255), WIDTH / 2, play_y + 12, ALLEGRO_ALIGN_CENTER, "Jogar");
 
+        // Botão Instruções
+        al_draw_filled_rectangle(instructions_x, instructions_y, instructions_x + button_w, instructions_y + button_h, al_map_rgb(50, 50, 50));
+        al_draw_text(btn_font, al_map_rgb(255, 255, 255), WIDTH / 2, instructions_y + 12, ALLEGRO_ALIGN_CENTER, "Instrucoes");
+
+        // Botão Sair
         al_draw_filled_rectangle(exit_x, exit_y, exit_x + button_w, exit_y + button_h, al_map_rgb(50, 50, 50));
         al_draw_text(btn_font, al_map_rgb(255, 255, 255), WIDTH / 2, exit_y + 12, ALLEGRO_ALIGN_CENTER, "Sair do Jogo");
 
+        // Lógica de seleção
         if (selected_option == 0) {
             al_draw_rectangle(play_x - 3, play_y - 3, play_x + button_w + 3, play_y + button_h + 3, al_map_rgb(255, 255, 255), 3);
+        } else if (selected_option == 1) {
+            al_draw_rectangle(instructions_x - 3, instructions_y - 3, instructions_x + button_w + 3, instructions_y + button_h + 3, al_map_rgb(255, 255, 255), 3);
         } else {
             al_draw_rectangle(exit_x - 3, exit_y - 3, exit_x + button_w + 3, exit_y + button_h + 3, al_map_rgb(255, 255, 255), 3);
         }
+
         al_flip_display();
     }
 }
 
 
 // TELA FINAL
- GameState show_end_screen(ALLEGRO_DISPLAY *display, ALLEGRO_EVENT_QUEUE *queue, ALLEGRO_FONT *titulo, ALLEGRO_FONT *sub, ALLEGRO_FONT *btn_font, const char* title_text, ALLEGRO_COLOR title_color, const char* subtitle_text, void (*fade_func)(float, int))
+GameState show_end_screen(ALLEGRO_DISPLAY *display, ALLEGRO_EVENT_QUEUE *queue, ALLEGRO_FONT *titulo, ALLEGRO_FONT *sub, ALLEGRO_FONT *btn_font, const char* title_text, ALLEGRO_COLOR title_color, const char* subtitle_text, void (*fade_func)(float, int))
 {
     bool done = false;
     bool restart_game = false;
-
     int selected_option = 0;
 
     float button_w = 250, button_h = 50;
@@ -413,9 +432,8 @@ GameState show_main_menu(ALLEGRO_DISPLAY *display, ALLEGRO_EVENT_QUEUE *queue, A
 
         if (ev.type == ALLEGRO_EVENT_DISPLAY_CLOSE) {
             done = true;
-            restart_game = false; // Se fechar, não reinicia
+            restart_game = false;
         }
-
         else if (ev.type == ALLEGRO_EVENT_KEY_DOWN)
         {
             if (ev.keyboard.keycode == ALLEGRO_KEY_W || ev.keyboard.keycode == ALLEGRO_KEY_S ||
@@ -424,61 +442,41 @@ GameState show_main_menu(ALLEGRO_DISPLAY *display, ALLEGRO_EVENT_QUEUE *queue, A
                 selected_option = 1 - selected_option;
             }
 
-            // Quando o jogador aperta ENTER ou ESPAÇO
             if (ev.keyboard.keycode == ALLEGRO_KEY_ENTER || ev.keyboard.keycode == ALLEGRO_KEY_SPACE)
             {
-                fade_func(0.7, 1); // <--- MUDANÇA AQUI: Inicia o fade-out
+                fade_func(0.7, 1);
                 done = true;
                 restart_game = (selected_option == 0);
             }
-        }
+        } // <--- FIM DO "ELSE IF". O CÓDIGO DE DESENHO NÃO PERTENCE AQUI.
 
-        else if (ev.type == ALLEGRO_EVENT_MOUSE_BUTTON_DOWN) // click do mouse
-        {
-            if (ev.mouse.button == 1)
-            {
-                // Quando o jogador clica em "Nova partida"
-                if (ev.mouse.x >= respawn_x && ev.mouse.x <= respawn_x + button_w && ev.mouse.y >= respawn_y && ev.mouse.y <= respawn_y + button_h)
-                {
-                    fade_func(0.7, 1); // <--- MUDANÇA AQUI: Inicia o fade-out
-                    done = true;
-                    restart_game = true;
-                }
-                // Quando o jogador clica em "Menu principal"
-                if (ev.mouse.x >= menu_x && ev.mouse.x <= menu_x + button_w && ev.mouse.y >= menu_y && ev.mouse.y <= menu_y + button_h)
-                {
-                    fade_func(0.7, 1); // <--- MUDANÇA AQUI: Inicia o fade-out
-                    done = true;
-                    restart_game = false;
-                }
-            }
-        }
-
-        // desenho
+        // Conteudos na tela
         al_draw_filled_rectangle(0, 0, WIDTH, HEIGHT, al_map_rgba_f(0, 0, 0, 0.6));
         al_draw_text(titulo, al_map_rgb(0, 0, 0), WIDTH / 2 + 4, HEIGHT / 4 + 4, ALLEGRO_ALIGN_CENTER, title_text);
         al_draw_text(titulo, title_color, WIDTH / 2, HEIGHT / 4, ALLEGRO_ALIGN_CENTER, title_text);
         al_draw_text(sub, al_map_rgb(255, 255, 255), WIDTH / 2, HEIGHT / 4 + 70, ALLEGRO_ALIGN_CENTER, subtitle_text);
 
+        // opção de novo jogo
         al_draw_filled_rectangle(respawn_x, respawn_y, respawn_x + button_w, respawn_y + button_h, al_map_rgb(50, 50, 50));
         al_draw_rectangle(respawn_x, respawn_y, respawn_x + button_w, respawn_y + button_h, al_map_rgb(0,0,0), 2);
         al_draw_text(btn_font, al_map_rgb(255, 255, 255), WIDTH / 2, respawn_y + 12, ALLEGRO_ALIGN_CENTER, "Nova partida");
-        al_draw_filled_rectangle(menu_x, menu_y, menu_x + button_w, menu_y + button_h, al_map_rgb(50, 50, 50));
 
+        // opção de menu principal
+        al_draw_filled_rectangle(menu_x, menu_y, menu_x + button_w, menu_y + button_h, al_map_rgb(50, 50, 50));
         al_draw_rectangle(menu_x, menu_y, menu_x + button_w, menu_y + button_h, al_map_rgb(0,0,0), 2);
         al_draw_text(btn_font, al_map_rgb(255, 255, 255), WIDTH / 2, menu_y + 12, ALLEGRO_ALIGN_CENTER, "Menu principal");
 
-        if (selected_option == 0) //bordinha de seleção
+        if (selected_option == 0)
         {
             al_draw_rectangle(respawn_x - 3, respawn_y - 3, respawn_x + button_w + 3, respawn_y + button_h + 3, al_map_rgb(255, 255, 255), 3);
         } else
         {
             al_draw_rectangle(menu_x - 3, menu_y - 3, menu_x + button_w + 3, menu_y + button_h + 3, al_map_rgb(255, 255, 255), 3);
-        }
-        al_flip_display();
+
+        }al_flip_display();
     }
 
-    // lógica de retorno
+    // lógica de retorno a outra tela
     if (restart_game)
     {
         return STATE_GAMEPLAY;
@@ -489,13 +487,119 @@ GameState show_main_menu(ALLEGRO_DISPLAY *display, ALLEGRO_EVENT_QUEUE *queue, A
 }
 
 
+
+// TELA DE INSTRUÇÕES
+GameState show_instructions_screen(ALLEGRO_DISPLAY *display, ALLEGRO_EVENT_QUEUE *queue, ALLEGRO_FONT *titulo_grande, ALLEGRO_FONT *texto_normal, ALLEGRO_FONT *btn_font)
+{
+    // Textos divididos em linhas separadas
+    const char *intro_l1 = "Voce acorda em um lugar estranho e escuro,";
+    const char *intro_l2 = "sem se lembrar de como chegou aqui.";
+    const char *intro_l3 = "Seu rosto esta coberto, e um sentimento";
+    const char *intro_l4 = "de pavor toma conta de voce.";
+
+    const char *objetivo_titulo = "Objetivo:";
+    const char *objetivo_l1 = "1. Encontre o ESPELHO para se lembrar.";
+    const char *objetivo_l2 = "2. Apos se ver no espelho, voce descobrira que";
+    const char *objetivo_l3 = "um CLONE, identico a voce, esta a espreita.";
+    const char *objetivo_l4 = "3. Seu clone ira caca-lo. Voce precisa elimina-lo";
+    const char *objetivo_l5 = "antes que ele o encontre.";
+
+    // Posições
+    float button_w = 200, button_h = 45;
+    float button_x = WIDTH / 2 - button_w / 2;
+    float button_y = HEIGHT - button_h - 25;
+
+    while(true)
+    {
+        ALLEGRO_EVENT ev;
+        al_wait_for_event(queue, &ev);
+
+        if (ev.type == ALLEGRO_EVENT_DISPLAY_CLOSE) {
+            return STATE_EXITING;
+        } else if (ev.type == ALLEGRO_EVENT_KEY_DOWN)
+        {
+            if (ev.keyboard.keycode == ALLEGRO_KEY_ESCAPE || ev.keyboard.keycode == ALLEGRO_KEY_ENTER || ev.keyboard.keycode == ALLEGRO_KEY_SPACE)
+            {
+                return STATE_MAIN_MENU;
+            }
+        }
+
+        al_clear_to_color(al_map_rgb(0, 0, 0));
+
+        // Conteudos na tela
+        float y_pos = 30;
+        float line_height = al_get_font_line_height(texto_normal);
+        float margin_left = 30; // Margem esquerda para o texto
+
+        // 1. Título
+        al_draw_text(titulo_grande, al_map_rgb(255, 255, 255), WIDTH / 2, y_pos, ALLEGRO_ALIGN_CENTER, "Instrucoes");
+        y_pos += al_get_font_line_height(titulo_grande) + 25;
+
+        // 2. Texto de introdução
+        al_draw_text(texto_normal, al_map_rgb(220, 220, 220), margin_left, y_pos, ALLEGRO_ALIGN_LEFT, intro_l1); y_pos += line_height;
+        al_draw_text(texto_normal, al_map_rgb(220, 220, 220), margin_left, y_pos, ALLEGRO_ALIGN_LEFT, intro_l2); y_pos += line_height;
+        al_draw_text(texto_normal, al_map_rgb(220, 220, 220), margin_left, y_pos, ALLEGRO_ALIGN_LEFT, intro_l3); y_pos += line_height;
+        al_draw_text(texto_normal, al_map_rgb(220, 220, 220), margin_left, y_pos, ALLEGRO_ALIGN_LEFT, intro_l4); y_pos += line_height;
+        y_pos += 20; // Espaço extra após o parágrafo
+
+        // 3. Título "Objetivo"
+        al_draw_text(texto_normal, al_map_rgb(255, 255, 255), margin_left, y_pos, ALLEGRO_ALIGN_LEFT, objetivo_titulo);
+        y_pos += line_height + 5;
+
+        // 4. Lista de objetivos
+        al_draw_text(texto_normal, al_map_rgb(220, 220, 220), margin_left, y_pos, ALLEGRO_ALIGN_LEFT, objetivo_l1); y_pos += line_height;
+        al_draw_text(texto_normal, al_map_rgb(220, 220, 220), margin_left, y_pos, ALLEGRO_ALIGN_LEFT, objetivo_l2); y_pos += line_height;
+        al_draw_text(texto_normal, al_map_rgb(220, 220, 220), margin_left, y_pos, ALLEGRO_ALIGN_LEFT, objetivo_l3); y_pos += line_height;
+        al_draw_text(texto_normal, al_map_rgb(220, 220, 220), margin_left, y_pos, ALLEGRO_ALIGN_LEFT, objetivo_l4); y_pos += line_height;
+        al_draw_text(texto_normal, al_map_rgb(220, 220, 220), margin_left, y_pos, ALLEGRO_ALIGN_LEFT, objetivo_l5); y_pos += line_height;
+
+        // 5. Botão de voltar
+        al_draw_filled_rectangle(button_x, button_y, button_x + button_w, button_y + button_h, al_map_rgb(50, 50, 50));
+        al_draw_rectangle(button_x - 2, button_y - 2, button_x + button_w + 2, button_y + button_h + 2, al_map_rgb(255, 255, 255), 2);
+        al_draw_text(btn_font, al_map_rgb(255, 255, 255), WIDTH / 2, button_y + 10, ALLEGRO_ALIGN_CENTER, "Voltar");
+
+        al_flip_display();
+    }
+}
+
+
+
 // TELA DO JOGO
-GameState run_gameplay_loop(ALLEGRO_DISPLAY* display, ALLEGRO_EVENT_QUEUE* queue, ALLEGRO_TIMER* timer, ALLEGRO_FONT* font_titulo_grande, ALLEGRO_FONT* font_subtitulo, ALLEGRO_FONT* font_botao, ALLEGRO_BITMAP* censure_sprite, ALLEGRO_BITMAP* knife_frame, ALLEGRO_BITMAP* death_sprite_frame, ALLEGRO_SAMPLE_INSTANCE* hit_instance, ALLEGRO_SAMPLE_INSTANCE* current_gameplay_music_instance, ALLEGRO_SAMPLE_INSTANCE* item_collect_instance, void (*fade_func)(float, int))
+GameState run_gameplay_loop(ALLEGRO_DISPLAY* display, ALLEGRO_EVENT_QUEUE* queue, ALLEGRO_TIMER* timer, ALLEGRO_FONT* font_titulo_grande, ALLEGRO_FONT* font_subtitulo, ALLEGRO_FONT* font_botao, ALLEGRO_BITMAP* censure_sprite, ALLEGRO_BITMAP* knife_frame, ALLEGRO_BITMAP* death_sprite_frame, ALLEGRO_SAMPLE_INSTANCE* hit_instance, ALLEGRO_SAMPLE_INSTANCE* current_gameplay_music_instance, ALLEGRO_SAMPLE_INSTANCE* item_collect_instance, ALLEGRO_SAMPLE_INSTANCE* voice_instances[], void (*fade_func)(float, int))
 {
     bool gameplay_running = true;
     bool redraw = true;
     bool keys[4] = {false, false, false, false}; // W, S, A, D
     float camera_x = 0, camera_y = 0;
+    double sprite_timer = 0.0, sprite_delay = 0.15;
+
+    // conjuntos de diálogos possíveis
+    const char* all_dialogue_sets[NUM_DIALOGUE_SETS][PHRASES_PER_SET] = {
+    // choque
+    {"Um espelho", "Espere...", "Essa pessoa...", "O rosto...", "E identico", "Entao... aquela pessoa", "Quem... e o real clone?", "ah nao"},
+    // negação
+    {"Que piada e essa?!", "Aquela coisa...", "E um truque", "Uma ilusao barata", "Eu nao sou isso...", "Aquele parecido comigo", "...", "So pode existir um"},
+    // desespero
+    {"Por favor", "Isso tem que parar", "O que eu fiz pra merecer isso?", "Ficar preso com um impostor", "Nao, nao, nao...", "Nao quero machucar ninguem,", "Preciso escapar daquilo", "..."},
+    // confusão
+    {"Queem sou eu?", "E quem e... ele?", "Se ele sou eu...", "Quem e o original?", "Nossos rostos...", "Sao os mesmos", "Vou acabar com isso", "So um e real"},
+    // reflexão
+    {"Ah...", "Entao eu sou assim", "Essa sombra... me segue", "Sempre esteve aqui", "Eu so nao queria ver", "Nao tem mais pra onde fugir", "Preciso acabar...", "...Com isso"}
+    };
+
+    // Ponteiro para o conjunto de dialogos escolhido p partida
+    const char** current_dialogue_set = NULL;
+
+    // variaveis de controle
+    bool is_in_dialogue = false;
+    int dialogue_index = 0;
+    int chars_to_draw = 0;
+    float dialogue_char_timer = 0.0f;
+    int chosen_voice_index = -1;
+
+    // constantes do diálogo
+    const float CHAR_TYPE_SPEED = 0.05f;
+    const float PAUSE_BETWEEN_PHRASES = 1.0f;
 
     al_clear_to_color(al_map_rgb(0, 0, 0));
     al_flip_display();
@@ -503,9 +607,8 @@ GameState run_gameplay_loop(ALLEGRO_DISPLAY* display, ALLEGRO_EVENT_QUEUE* queue
     // fade-in
     fade_func(0.7, -1);
 
-    // música do jogo, depois da transição
+    // música do jogo (depois da transição)
     if (current_gameplay_music_instance) al_play_sample_instance(current_gameplay_music_instance);
-
 
 
     while (gameplay_running)
@@ -513,33 +616,23 @@ GameState run_gameplay_loop(ALLEGRO_DISPLAY* display, ALLEGRO_EVENT_QUEUE* queue
         ALLEGRO_EVENT ev;
         al_wait_for_event(queue, &ev);
 
-        // --- 1. PROCESSAMENTO DE EVENTOS ---
         // Eventos que devem funcionar sempre
         if (ev.type == ALLEGRO_EVENT_DISPLAY_CLOSE) {
             gameplay_running = false;
         }
 
-        // Eventos que só funcionam durante o jogo
+        // Eventos que so funcionam durante o jogo
         if (!game_over) {
             switch (ev.type)
-            { // tipo de evento
-                case ALLEGRO_EVENT_KEY_DOWN: //quando teclas são pressionadas
+            {
+                case ALLEGRO_EVENT_KEY_DOWN: // quando teclas são pressionadas
                     if (ev.keyboard.keycode == ALLEGRO_KEY_ESCAPE) gameplay_running = false;
                     if (ev.keyboard.keycode == ALLEGRO_KEY_W) keys[0] = true;
                     if (ev.keyboard.keycode == ALLEGRO_KEY_S) keys[1] = true;
                     if (ev.keyboard.keycode == ALLEGRO_KEY_A) keys[2] = true;
                     if (ev.keyboard.keycode == ALLEGRO_KEY_D) keys[3] = true;
-                    break;
 
-                case ALLEGRO_EVENT_KEY_UP: // quando teclas são soltas
-                    if (ev.keyboard.keycode == ALLEGRO_KEY_W) keys[0] = false;
-                    if (ev.keyboard.keycode == ALLEGRO_KEY_S) keys[1] = false;
-                    if (ev.keyboard.keycode == ALLEGRO_KEY_A) keys[2] = false;
-                    if (ev.keyboard.keycode == ALLEGRO_KEY_D) keys[3] = false;
-                    break;
-
-                case ALLEGRO_EVENT_MOUSE_BUTTON_DOWN: // clique do mouse
-                    if (ev.mouse.button == 1 && !knife.active)
+                    if (ev.keyboard.keycode == ALLEGRO_KEY_SPACE && !knife.active) // quando a barra de espaço é precionada
                     {
                         if (hit_instance) al_play_sample_instance(hit_instance);
                         knife.active = true;
@@ -555,8 +648,6 @@ GameState run_gameplay_loop(ALLEGRO_DISPLAY* display, ALLEGRO_EVENT_QUEUE* queue
 
                         // verificar se tem uma parede entre o jogador e o npc
                         for (int i = 0; i < NUM_NPCS; i++) {
-
-                            // Checa se o NPC está vivo (e não já morrendo)
                             if (npcs[i].alive)
                             {
                                 float npc_center_x = npcs[i].x + SPRITE_SIZE / 2;
@@ -571,19 +662,26 @@ GameState run_gameplay_loop(ALLEGRO_DISPLAY* display, ALLEGRO_EVENT_QUEUE* queue
                                     npcs[i].alive = false;
                                     npcs[i].death_timer = 1.0f;
 
-                                    // Apenas marca o estado de vitória, não chama a tela aqui.
                                     if (npcs[i].is_target)
                                     {
                                         game_over = true;
                                         victory = true;
                                     } else {
-                                    printf("NPC %d eliminado.\n", i);
+                                        printf("NPC %d eliminado.\n", i);
                                     }
                                 }
                             }
                         }
                     }
                     break;
+
+                case ALLEGRO_EVENT_KEY_UP: // quando teclas são soltas
+                    if (ev.keyboard.keycode == ALLEGRO_KEY_W) keys[0] = false;
+                    if (ev.keyboard.keycode == ALLEGRO_KEY_S) keys[1] = false;
+                    if (ev.keyboard.keycode == ALLEGRO_KEY_A) keys[2] = false;
+                    if (ev.keyboard.keycode == ALLEGRO_KEY_D) keys[3] = false;
+                    break;
+
             }
         }
 
@@ -593,8 +691,6 @@ GameState run_gameplay_loop(ALLEGRO_DISPLAY* display, ALLEGRO_EVENT_QUEUE* queue
             if (!game_over)
             {
                 // Animação do sprite do jogador e NPCs
-                // (Esta parte parece ter sido perdida, estou adicionando de volta)
-                double sprite_timer = 0.0, sprite_delay = 0.15; // Defina estas no início da main
                 sprite_timer += 1.0 / 60.0;
                 if (sprite_timer >= sprite_delay)
                 {
@@ -612,102 +708,112 @@ GameState run_gameplay_loop(ALLEGRO_DISPLAY* display, ALLEGRO_EVENT_QUEUE* queue
                 sprite_timer = 0.0;
                 }
 
-            // Animação da faca
-            if (knife.active)
-            {
-                knife.anim_timer += 1.0 / 60.0;
-                if (knife.anim_timer >= KNIFE_ANIM_SPEED)
+                // Animação da faca
+                if (knife.active)
                 {
-                    knife.frame++;
-                    knife.anim_timer = 0;
-                    if (knife.frame >= KNIFE_FRAMES)
+                    knife.anim_timer += 1.0 / 60.0;
+                    if (knife.anim_timer >= KNIFE_ANIM_SPEED)
                     {
-                        knife.active = false;
-                        knife.frame = 0;
-                    }
-                }
-            }
-
-            // Movimento do jogador
-            float speed = 3.0;
-            float new_x = player.x, new_y = player.y;
-            if (keys[0]) { new_y -= speed; player.movement = 3; }
-            if (keys[1]) { new_y += speed; player.movement = 0; }
-            if (keys[2]) { new_x -= speed; player.movement = 1; }
-            if (keys[3]) { new_x += speed; player.movement = 2; }
-            if (can_move(new_x, new_y)) { player.x = new_x; player.y = new_y; }
-
-            // Limites do mapa para o jogador
-            if (player.x < 0) player.x = 0;
-            if (player.x > MAP_WIDTH - SPRITE_SIZE) player.x = MAP_WIDTH - SPRITE_SIZE;
-            if (player.y < 0) player.y = 0;
-            if (player.y > MAP_HEIGHT - SPRITE_SIZE) player.y = MAP_HEIGHT - SPRITE_SIZE;
-
-            // Lógica da câmera
-            camera_x = player.x - WIDTH / 2;
-            camera_y = player.y - HEIGHT / 2;
-            if (camera_x < 0) camera_x = 0;
-            if (camera_x > MAP_WIDTH - WIDTH) camera_x = MAP_WIDTH - WIDTH;
-            if (camera_y < 0) camera_y = 0;
-            if (camera_y > MAP_HEIGHT - HEIGHT) camera_y = MAP_HEIGHT - HEIGHT;
-
-            // Lógica do espelho
-            if (mirror_item.active)
-            {
-                float dx_mirror = player.x - mirror_item.x;
-                float dy_mirror = player.y - mirror_item.y;
-                if (sqrt(dx_mirror * dx_mirror + dy_mirror * dy_mirror) < (SPRITE_SIZE / 2))
-                {
-                    if (item_collect_instance) al_play_sample_instance(item_collect_instance);
-                    found_mirror = true;
-                    mirror_item.active = false;
-                    printf("Voce encontrou o espelho!\n");
-                }
-            }
-
-            // Lógica dos NPCs
-            for (int i = 0; i < NUM_NPCS; i++)
-            {
-                if (npcs[i].alive)
-                {
-                    float new_x_npc = npcs[i].x;
-                    float new_y_npc = npcs[i].y;
-                    float npc_speed = npcs[i].is_target ? 2.0 : 1.5;
-                    bool is_pursuing = npcs[i].is_target;
-
-                    if (!npcs[i].is_target)
-                    {
-                        npcs[i].move_timer -= 1.0 / 60.0;
-                        if (npcs[i].move_timer <= 0)
+                        knife.frame++;
+                        knife.anim_timer = 0;
+                        if (knife.frame >= KNIFE_FRAMES)
                         {
-                            npcs[i].move_timer = (rand() % 60 + 40) / 10.0;
-                            if ((rand() % 100) < CHANCE_TO_PURSUE) npcs[i].move_mode = -1;
-                            else npcs[i].move_mode = rand() % 4;
+                            knife.active = false;
+                            knife.frame = 0;
                         }
-                        if (npcs[i].move_mode == -1) is_pursuing = true;
                     }
+                }
 
-                    // logica de colisão
-                    if (is_pursuing)
+                // Movimento do jogador
+                float speed = 3.0;
+                float new_x = player.x, new_y = player.y;
+                if (keys[0]) { new_y -= speed; player.movement = 3; }
+                if (keys[1]) { new_y += speed; player.movement = 0; }
+                if (keys[2]) { new_x -= speed; player.movement = 1; }
+                if (keys[3]) { new_x += speed; player.movement = 2; }
+                if (can_move(new_x, new_y)) { player.x = new_x; player.y = new_y; }
+
+                // Limites do mapa para o jogador
+                if (player.x < 0) player.x = 0;
+                if (player.x > MAP_WIDTH - SPRITE_SIZE) player.x = MAP_WIDTH - SPRITE_SIZE;
+                if (player.y < 0) player.y = 0;
+                if (player.y > MAP_HEIGHT - SPRITE_SIZE) player.y = MAP_HEIGHT - SPRITE_SIZE;
+
+                // Lógica da câmera
+                camera_x = player.x - WIDTH / 2;
+                camera_y = player.y - HEIGHT / 2;
+                if (camera_x < 0) camera_x = 0;
+                if (camera_x > MAP_WIDTH - WIDTH) camera_x = MAP_WIDTH - WIDTH;
+                if (camera_y < 0) camera_y = 0;
+                if (camera_y > MAP_HEIGHT - HEIGHT) camera_y = MAP_HEIGHT - HEIGHT;
+
+                // Lógica do espelho
+                if (mirror_item.active)
+                {
+                    float dx_mirror = player.x - mirror_item.x;
+                    float dy_mirror = player.y - mirror_item.y;
+                    if (sqrt(dx_mirror * dx_mirror + dy_mirror * dy_mirror) < (SPRITE_SIZE / 2))
                     {
-                        float dx = player.x - npcs[i].x;
-                        float dy = player.y - npcs[i].y;
-                        float dist = sqrt(dx * dx + dy * dy);
+                        if (item_collect_instance) al_play_sample_instance(item_collect_instance);
+                        found_mirror = true;
+                        mirror_item.active = false;
+                        printf("Voce encontrou o espelho!\n");
 
-                        if (dist > 1)
+                        is_in_dialogue = true;
+                        chosen_voice_index = rand() % NUM_VOICE_SOUNDS;
+
+                        int set_index = rand() % NUM_DIALOGUE_SETS;
+                        current_dialogue_set = all_dialogue_sets[set_index];
+
+                        if (chosen_voice_index != -1 && voice_instances[chosen_voice_index]) {
+                            al_play_sample_instance(voice_instances[chosen_voice_index]);
+                        }
+                    }
+                }
+
+                // Lógica dos NPCs
+                for (int i = 0; i < NUM_NPCS; i++)
+                {
+                    if (npcs[i].alive)
+                    {
+                        float new_x_npc = npcs[i].x;
+                        float new_y_npc = npcs[i].y;
+                        float npc_speed = npcs[i].is_target ? 2.0 : 1.5;
+                        bool is_pursuing = npcs[i].is_target;
+
+                        if (!npcs[i].is_target)
                         {
-                            float move_x = (dx / dist) * npc_speed;
-                            float move_y = (dy / dist) * npc_speed;
-                            if (can_move(npcs[i].x + move_x, npcs[i].y + move_y))
+                            npcs[i].move_timer -= 1.0 / 60.0;
+                            if (npcs[i].move_timer <= 0)
                             {
-                                new_x_npc += move_x; new_y_npc += move_y; // percurso ideal
-                            } else  // se nao conseguiu
-                            {
-                                if (can_move(npcs[i].x + move_x, npcs[i].y)) new_x_npc += move_x; // mover em x
-                                else if (can_move(npcs[i].x, npcs[i].y + move_y)) new_y_npc += move_y; // mover em y
-                                else if (!npcs[i].is_target) npcs[i].move_timer = 0; // forca nova dicisão
+                                npcs[i].move_timer = (rand() % 60 + 40) / 10.0;
+                                if ((rand() % 100) < CHANCE_TO_PURSUE) npcs[i].move_mode = -1; // chance de perseguir
+                                else npcs[i].move_mode = rand() % 4; // movimento randomico
                             }
+                            if (npcs[i].move_mode == -1) is_pursuing = true;
                         }
+
+                        // logica de colisão
+                        if (is_pursuing)
+                        {
+                            float dx = player.x - npcs[i].x;
+                            float dy = player.y - npcs[i].y;
+                            float dist = sqrt(dx * dx + dy * dy);
+
+                            if (dist > 1)
+                            {
+                                float move_x = (dx / dist) * npc_speed;
+                                float move_y = (dy / dist) * npc_speed;
+                                if (can_move(npcs[i].x + move_x, npcs[i].y + move_y))
+                                {
+                                    new_x_npc += move_x; new_y_npc += move_y; // percurso ideal
+                                } else  // se nao conseguiu
+                                {
+                                    if (can_move(npcs[i].x + move_x, npcs[i].y)) new_x_npc += move_x; // mover em x
+                                    else if (can_move(npcs[i].x, npcs[i].y + move_y)) new_y_npc += move_y; // mover em y
+                                    else if (!npcs[i].is_target) npcs[i].move_timer = 0; // forca nova dicisão
+                                }
+                            }
 
                             float angle = atan2(dy, dx) * 180 / M_PI;
                             if (angle >= -45 && angle < 45) npcs[i].movement = 2;
@@ -740,9 +846,13 @@ GameState run_gameplay_loop(ALLEGRO_DISPLAY* display, ALLEGRO_EVENT_QUEUE* queue
                             {
                                 game_over = true;
                                 victory = false;
+                                if (chosen_voice_index != -1 && voice_instances[chosen_voice_index])
+                                {
+                                    al_stop_sample_instance(voice_instances[chosen_voice_index]);
+                                }
                             }
                         }
-                    } // Fim do if(npcs[i].alive)
+                    } // fim do if(npcs[i].alive)
 
                     else if (npcs[i].death_timer > 0)
                     {
@@ -750,32 +860,82 @@ GameState run_gameplay_loop(ALLEGRO_DISPLAY* display, ALLEGRO_EVENT_QUEUE* queue
                     }
                 }
             }
+
+
+            // logica de dialogo
+            if (is_in_dialogue)
+            {
+                dialogue_char_timer += 1.0 / 60.0;
+                const char* full_phrase = current_dialogue_set[dialogue_index];
+                // calcula o tamanho da frase atual
+                int current_phrase_len = strlen(full_phrase);
+
+                // logica p digitação do texto
+                if (chars_to_draw < current_phrase_len)
+                {
+                    if (dialogue_char_timer >= CHAR_TYPE_SPEED)
+                    {
+                        dialogue_char_timer = 0;
+                        chars_to_draw++;
+                    }
+                }
+                else // A frase atual terminou de ser digitada
+                {
+                // parar som que tava tocando em loop
+                    if (chosen_voice_index != -1 && voice_instances[chosen_voice_index]) {
+                        al_stop_sample_instance(voice_instances[chosen_voice_index]);
+                    }
+
+                    // espera a pausa entre as frases
+                    if (dialogue_char_timer >= PAUSE_BETWEEN_PHRASES)
+                    {
+                        // reseta o timer e avança para a proxima frase
+                        dialogue_char_timer = 0;
+                        dialogue_index++;
+                        chars_to_draw = 0; // reseta os caracteres p nova frase
+
+                        // ver se o dialogo inteiro acabou
+                        if (dialogue_index >= PHRASES_PER_SET) //
+                        {
+                            is_in_dialogue = false; // termina o diálogo
+                            chosen_voice_index = -1; // reseta a voz escolhida
+                        }
+                        else // se não acabou, prepara e inicia o som p proxima frase
+                        {
+                        // 5. inicia o som da nova frase
+                            if (chosen_voice_index != -1 && voice_instances[chosen_voice_index]) {
+                                al_play_sample_instance(voice_instances[chosen_voice_index]);
+                            }
+                        }
+                    }
+                }
+            }
+
         redraw = true; // redesenhar a tela
         }
 
 
+        // desenhar tudo
         if (redraw && al_is_event_queue_empty(queue))
         {
             redraw = false;
 
-            // ETAPA 1: Desenhar toda a cena do jogo no buffer do tamanho do mapa
-            // ===================================================================
+            // desenhar toda a cena do jogo no buffer do tamanho do mapa (p iluminação)
             al_set_target_bitmap(light_buffer);
             al_clear_to_color(al_map_rgb(0, 0, 0));
 
-
-            // Desenho do mapa matriz
+            // desenho do mapa matriz
             for (int row = 0; row < TILE_ROWS; row++)
             {
                 for (int col = 0; col < TILE_COLS; col++)
                 {
-                    // As coordenadas de desenho agora são as coordenadas REAIS do mapa
+                    // As coordenadas de desenho agora são coordenadas do mapa
                     float draw_x = col * TILE_SIZE;
                     float draw_y = row * TILE_SIZE;
                     int tile_type = map[row][col];
                     int variation = tile_variations[row][col];
 
-                    switch (tile_type)
+                    switch (tile_type) // desenhar paredes e tipos de chão
                     {
                         case 0: al_draw_bitmap(wall_sprite, draw_x, draw_y, 0); break;
                         case 1: al_draw_bitmap_region(left_shadow_floor_sprite, 0, variation * TILE_SIZE, TILE_SIZE, TILE_SIZE, draw_x, draw_y, 0); break;
@@ -818,7 +978,7 @@ GameState run_gameplay_loop(ALLEGRO_DISPLAY* display, ALLEGRO_EVENT_QUEUE* queue
                 al_set_target_bitmap(knife_frame);
                 al_clear_to_color(al_map_rgba(0, 0, 0, 0));
                 al_draw_bitmap_region(knife.sprite_sheet, sprite_x, sprite_y, KNIFE_WIDTH, KNIFE_HEIGHT, 0, 0, 0);
-                al_set_target_bitmap(light_buffer); // Volta a desenhar no buffer do mapa
+                al_set_target_bitmap(light_buffer); // volta a desenhar no buffer do mapa
 
                 switch (player.movement) // direções da faca
                 {
@@ -856,15 +1016,15 @@ GameState run_gameplay_loop(ALLEGRO_DISPLAY* display, ALLEGRO_EVENT_QUEUE* queue
                 }
             }
 
-            //Desenhar o buffer na tela, aplicando  câmera e iluminação
+            // Desenhar o buffer na tela, colocando câmera e iluminação
             al_set_target_backbuffer(display);
             al_clear_to_color(al_map_rgb(0, 0, 0));
 
 
-        // ILUMINAÇÃO
+            // Desenhar iluminção
             if (light_mask)
             {
-                // 1. Desenha a cena escura inteira, pegando a região da câmera
+                // 1. Desenha tudo escuro, pegando a região da câmera
                 al_draw_tinted_bitmap_region
                 (
                     light_buffer,
@@ -892,8 +1052,46 @@ GameState run_gameplay_loop(ALLEGRO_DISPLAY* display, ALLEGRO_EVENT_QUEUE* queue
 
             }else
             {
-                // Fallback: se a luz falhar, apenas desenha a cena sem efeitos
+                // se a luz falhar, apenas desenha a cena sem efeitos
                 al_draw_bitmap_region(light_buffer, camera_x, camera_y, WIDTH, HEIGHT, 0, 0, 0);
+            }
+
+
+            // desenho do dialogo-
+            if (is_in_dialogue)
+            {
+                float box_h = 80;
+                // desenha a caixa
+                al_draw_filled_rectangle(20, HEIGHT - box_h - 20, WIDTH - 20, HEIGHT - 20, al_map_rgba_f(0, 0, 0, 0.7));
+                // desenha a borda
+                al_draw_rectangle(20, HEIGHT - box_h - 20, WIDTH - 20, HEIGHT - 20, al_map_rgb(255, 255, 255), 2.0);
+
+                // prepara e desenha o texto parcial
+                if (chars_to_draw > 0)
+                {
+                    // Pega a frase completa
+                    const char* full_phrase = current_dialogue_set[dialogue_index];
+
+                    // Cria um buffer temporário para o texto parcial
+                    char partial_text[256] = {0}; // Inicializa com zeros
+
+                    // Copia apenas os caracteres necessários
+                    int len_to_copy = chars_to_draw;
+                    if (len_to_copy > strlen(full_phrase)) {
+                        len_to_copy = strlen(full_phrase);
+                    }
+                    if (len_to_copy >= sizeof(partial_text)) {
+                        len_to_copy = sizeof(partial_text) - 1;
+                    }
+
+                    // Copia manualmente para garantir o terminador nulo
+                    for (int i = 0; i < len_to_copy; i++) {
+                        partial_text[i] = full_phrase[i];
+                    }
+
+                    // Desenha o texto na caixa
+                    al_draw_text(font_subtitulo, al_map_rgb(255, 255, 255), 40, HEIGHT - box_h, 0, partial_text);
+                }
             }
 
 
@@ -901,24 +1099,38 @@ GameState run_gameplay_loop(ALLEGRO_DISPLAY* display, ALLEGRO_EVENT_QUEUE* queue
             // Desenhar a tela de Fim de Jogo (se aplicável) e virar o display
             if (game_over)
             {
+                // Parar todos os sons ativos do gameplay
                 if (current_gameplay_music_instance) al_stop_sample_instance(current_gameplay_music_instance);
-                al_stop_timer(timer);
+
+                // para o som do diálogo
+                if (chosen_voice_index != -1 && voice_instances[chosen_voice_index]) {
+                    al_stop_sample_instance(voice_instances[chosen_voice_index]);
+                }
+
+                al_stop_timer(timer); // Para o timer do jogo
+
                 GameState next_state;
                 if (victory)
                 {
                     next_state = show_end_screen(display, queue, font_titulo_grande, font_subtitulo, font_botao, "VITORIA!", al_map_rgb(0, 255, 0), "Voce matou o clone", fade_func);
-                    } else
+                } else
                 {
                     next_state = show_end_screen(display, queue, font_titulo_grande, font_subtitulo, font_botao, "Voce morreu!", al_map_rgb(255, 0, 0), "o clone te encontrou", fade_func);
                 }
-                return next_state;
+                return next_state; // Retorna para o loop principal do main
             }
+
             al_flip_display();
+
         } // Fim do if(redraw)
-    } // Fim do while(gameplay_running)
+    } // Fim do while
 
     return STATE_EXITING; // caso ESC
-}
+
+} // fim da tela de jogo
+
+
+
 
 
 int main()
@@ -978,6 +1190,9 @@ int main()
         fprintf(stderr, "Aviso: Não foi possível carregar fonte '../../fontes/minecraft.ttf'. Continuando sem fonte.\n");
     }
 
+
+    srand(time(NULL));
+
     // para a tela de Game Over
     ALLEGRO_FONT *font_titulo_grande = al_load_ttf_font("../../fontes/minecraft.ttf", 48, 0);
     ALLEGRO_FONT *font_subtitulo = al_load_ttf_font("../../fontes/minecraft.ttf", 24, 0);
@@ -992,18 +1207,22 @@ int main()
     }
 
     // Sons
-    ALLEGRO_SAMPLE *hit_sample = NULL;
+    ALLEGRO_SAMPLE *hit_sample = NULL; // som da faca
     ALLEGRO_SAMPLE_INSTANCE *hit_instance = NULL;
-    ALLEGRO_SAMPLE *gameplay_music_samples[NUM_GAMEPLAY_TRACKS] = {NULL};
+    ALLEGRO_SAMPLE *gameplay_music_samples[NUM_GAMEPLAY_TRACKS] = {NULL}; // musicas da gameplay
     ALLEGRO_SAMPLE_INSTANCE *gameplay_music_instances[NUM_GAMEPLAY_TRACKS] = {NULL};
-    ALLEGRO_SAMPLE *item_collect_sample = NULL;
+    ALLEGRO_SAMPLE *item_collect_sample = NULL; // som de coleta de item
     ALLEGRO_SAMPLE_INSTANCE *item_collect_instance = NULL;
-    ALLEGRO_SAMPLE *menu_music = NULL;
+    ALLEGRO_SAMPLE *menu_music = NULL; // musica do menu
     ALLEGRO_SAMPLE_INSTANCE *menu_instance = NULL;
+
+    ALLEGRO_SAMPLE *voice_samples[NUM_VOICE_SOUNDS] = {NULL};
+    ALLEGRO_SAMPLE_INSTANCE *voice_instances[NUM_VOICE_SOUNDS] = {NULL};
+
 
     if (al_install_audio())
     {
-        al_reserve_samples(2); // Hit + música de fundo
+        al_reserve_samples(3); // Hit + música de fundo + dialogo do personagem
 
         hit_sample = al_load_sample("../../sons/hit.wav");
         if (!hit_sample)
@@ -1055,6 +1274,22 @@ int main()
             }
         }
 
+        // Carrega os 7 sons de voz do diálogo
+        for (int i = 0; i < NUM_VOICE_SOUNDS; i++) {
+        char filename[50];
+        sprintf(filename, "../../sons/voice%d.wav", i + 1);
+
+        voice_samples[i] = al_load_sample(filename);
+            if (!voice_samples[i]) {
+                fprintf(stderr, "Aviso: Não foi possível carregar som '%s'.\n", filename);
+            } else {
+                voice_instances[i] = al_create_sample_instance(voice_samples[i]);
+                if (voice_instances[i]) {
+                    al_set_sample_instance_playmode(voice_instances[i], ALLEGRO_PLAYMODE_LOOP);
+                    al_attach_sample_instance_to_mixer(voice_instances[i], al_get_default_mixer());
+                }
+            }
+        }
 
 
         menu_music = al_load_sample("../../sons/omori.wav");
@@ -1086,6 +1321,10 @@ int main()
         al_destroy_sample_instance(gameplay_music_instances);
         al_destroy_sample(item_collect_sample);
         al_destroy_sample_instance(item_collect_instance);
+        al_destroy_sample(voice_samples);
+        al_destroy_sample_instance(voice_instances);
+        al_destroy_sample(menu_music);
+        al_destroy_sample_instance(menu_instance);
         if (font) al_destroy_font(font);
         al_destroy_timer(timer);
         al_destroy_event_queue(queue);
@@ -1104,6 +1343,10 @@ int main()
         al_destroy_sample_instance(gameplay_music_instances);
         al_destroy_sample(item_collect_sample);
         al_destroy_sample_instance(item_collect_instance);
+        al_destroy_sample(voice_samples);
+        al_destroy_sample_instance(voice_instances);
+        al_destroy_sample(menu_music);
+        al_destroy_sample_instance(menu_instance);
         if (font) al_destroy_font(font);
         al_destroy_timer(timer);
         al_destroy_event_queue(queue);
@@ -1123,6 +1366,10 @@ int main()
         al_destroy_sample_instance(gameplay_music_instances);
         al_destroy_sample(item_collect_sample);
         al_destroy_sample_instance(item_collect_instance);
+        al_destroy_sample(voice_samples);
+        al_destroy_sample_instance(voice_instances);
+        al_destroy_sample(menu_music);
+        al_destroy_sample_instance(menu_instance);
         if (font) al_destroy_font(font);
         al_destroy_timer(timer);
         al_destroy_event_queue(queue);
@@ -1143,6 +1390,10 @@ int main()
         al_destroy_sample_instance(gameplay_music_instances);
         al_destroy_sample(item_collect_sample);
         al_destroy_sample_instance(item_collect_instance);
+        al_destroy_sample(voice_samples);
+        al_destroy_sample_instance(voice_instances);
+        al_destroy_sample(menu_music);
+        al_destroy_sample_instance(menu_instance);
         if (font) al_destroy_font(font);
         al_destroy_timer(timer);
         al_destroy_event_queue(queue);
@@ -1164,6 +1415,10 @@ int main()
         al_destroy_sample_instance(gameplay_music_instances);
         al_destroy_sample(item_collect_sample);
         al_destroy_sample_instance(item_collect_instance);
+        al_destroy_sample(voice_samples);
+        al_destroy_sample_instance(voice_instances);
+        al_destroy_sample(menu_music);
+        al_destroy_sample_instance(menu_instance);
         if (font) al_destroy_font(font);
         al_destroy_timer(timer);
         al_destroy_event_queue(queue);
@@ -1186,6 +1441,10 @@ int main()
         al_destroy_sample_instance(gameplay_music_instances);
         al_destroy_sample(item_collect_sample);
         al_destroy_sample_instance(item_collect_instance);
+        al_destroy_sample(voice_samples);
+        al_destroy_sample_instance(voice_instances);
+        al_destroy_sample(menu_music);
+        al_destroy_sample_instance(menu_instance);
         if (font) al_destroy_font(font);
         al_destroy_timer(timer);
         al_destroy_event_queue(queue);
@@ -1209,6 +1468,10 @@ int main()
         al_destroy_sample_instance(gameplay_music_instances);
         al_destroy_sample(item_collect_sample);
         al_destroy_sample_instance(item_collect_instance);
+        al_destroy_sample(voice_samples);
+        al_destroy_sample_instance(voice_instances);
+        al_destroy_sample(menu_music);
+        al_destroy_sample_instance(menu_instance);
         if (font) al_destroy_font(font);
         al_destroy_timer(timer);
         al_destroy_event_queue(queue);
@@ -1233,6 +1496,10 @@ int main()
         al_destroy_sample_instance(gameplay_music_instances);
         al_destroy_sample(item_collect_sample);
         al_destroy_sample_instance(item_collect_instance);
+        al_destroy_sample(voice_samples);
+        al_destroy_sample_instance(voice_instances);
+        al_destroy_sample(menu_music);
+        al_destroy_sample_instance(menu_instance);
         if (font) al_destroy_font(font);
         al_destroy_timer(timer);
         al_destroy_event_queue(queue);
@@ -1258,6 +1525,10 @@ int main()
         al_destroy_sample_instance(gameplay_music_instances);
         al_destroy_sample(item_collect_sample);
         al_destroy_sample_instance(item_collect_instance);
+        al_destroy_sample(voice_samples);
+        al_destroy_sample_instance(voice_instances);
+        al_destroy_sample(menu_music);
+        al_destroy_sample_instance(menu_instance);
         if (font) al_destroy_font(font);
         al_destroy_timer(timer);
         al_destroy_event_queue(queue);
@@ -1284,6 +1555,10 @@ int main()
         al_destroy_sample_instance(gameplay_music_instances);
         al_destroy_sample(item_collect_sample);
         al_destroy_sample_instance(item_collect_instance);
+        al_destroy_sample(voice_samples);
+        al_destroy_sample_instance(voice_instances);
+        al_destroy_sample(menu_music);
+        al_destroy_sample_instance(menu_instance);
         if (font) al_destroy_font(font);
         al_destroy_timer(timer);
         al_destroy_event_queue(queue);
@@ -1311,6 +1586,10 @@ int main()
         al_destroy_sample_instance(gameplay_music_instances);
         al_destroy_sample(item_collect_sample);
         al_destroy_sample_instance(item_collect_instance);
+        al_destroy_sample(voice_samples);
+        al_destroy_sample_instance(voice_instances);
+        al_destroy_sample(menu_music);
+        al_destroy_sample_instance(menu_instance);
         if (font) al_destroy_font(font);
         al_destroy_timer(timer);
         al_destroy_event_queue(queue);
@@ -1339,6 +1618,10 @@ int main()
         al_destroy_sample_instance(gameplay_music_instances);
         al_destroy_sample(item_collect_sample);
         al_destroy_sample_instance(item_collect_instance);
+        al_destroy_sample(voice_samples);
+        al_destroy_sample_instance(voice_instances);
+        al_destroy_sample(menu_music);
+        al_destroy_sample_instance(menu_instance);
         if (font) al_destroy_font(font);
         al_destroy_timer(timer);
         al_destroy_event_queue(queue);
@@ -1368,6 +1651,10 @@ int main()
         al_destroy_sample_instance(gameplay_music_instances);
         al_destroy_sample(item_collect_sample);
         al_destroy_sample_instance(item_collect_instance);
+        al_destroy_sample(voice_samples);
+        al_destroy_sample_instance(voice_instances);
+        al_destroy_sample(menu_music);
+        al_destroy_sample_instance(menu_instance);
         if (font) al_destroy_font(font);
         al_destroy_timer(timer);
         al_destroy_event_queue(queue);
@@ -1398,6 +1685,10 @@ int main()
         al_destroy_sample_instance(gameplay_music_instances);
         al_destroy_sample(item_collect_sample);
         al_destroy_sample_instance(item_collect_instance);
+        al_destroy_sample(voice_samples);
+        al_destroy_sample_instance(voice_instances);
+        al_destroy_sample(menu_music);
+        al_destroy_sample_instance(menu_instance);
         if (font) al_destroy_font(font);
         al_destroy_timer(timer);
         al_destroy_event_queue(queue);
@@ -1430,6 +1721,10 @@ int main()
         al_destroy_sample_instance(gameplay_music_instances);
         al_destroy_sample(item_collect_sample);
         al_destroy_sample_instance(item_collect_instance);
+        al_destroy_sample(voice_samples);
+        al_destroy_sample_instance(voice_instances);
+        al_destroy_sample(menu_music);
+        al_destroy_sample_instance(menu_instance);
         if (font) al_destroy_font(font);
         al_destroy_timer(timer);
         al_destroy_event_queue(queue);
@@ -1463,6 +1758,10 @@ int main()
         al_destroy_sample_instance(gameplay_music_instances);
         al_destroy_sample(item_collect_sample);
         al_destroy_sample_instance(item_collect_instance);
+        al_destroy_sample(voice_samples);
+        al_destroy_sample_instance(voice_instances);
+        al_destroy_sample(menu_music);
+        al_destroy_sample_instance(menu_instance);
         if (font) al_destroy_font(font);
         al_destroy_timer(timer);
         al_destroy_event_queue(queue);
@@ -1496,6 +1795,10 @@ int main()
         al_destroy_sample_instance(gameplay_music_instances);
         al_destroy_sample(item_collect_sample);
         al_destroy_sample_instance(item_collect_instance);
+        al_destroy_sample(voice_samples);
+        al_destroy_sample_instance(voice_instances);
+        al_destroy_sample(menu_music);
+        al_destroy_sample_instance(menu_instance);
         if (font) al_destroy_font(font);
         al_destroy_timer(timer);
         al_destroy_event_queue(queue);
@@ -1529,6 +1832,10 @@ int main()
         al_destroy_sample_instance(gameplay_music_instances);
         al_destroy_sample(item_collect_sample);
         al_destroy_sample_instance(item_collect_instance);
+        al_destroy_sample(voice_samples);
+        al_destroy_sample_instance(voice_instances);
+        al_destroy_sample(menu_music);
+        al_destroy_sample_instance(menu_instance);
         if (font) al_destroy_font(font);
         al_destroy_timer(timer);
         al_destroy_event_queue(queue);
@@ -1564,6 +1871,10 @@ int main()
         al_destroy_sample_instance(gameplay_music_instances);
         al_destroy_sample(item_collect_sample);
         al_destroy_sample_instance(item_collect_instance);
+        al_destroy_sample(voice_samples);
+        al_destroy_sample_instance(voice_instances);
+        al_destroy_sample(menu_music);
+        al_destroy_sample_instance(menu_instance);
         if (font) al_destroy_font(font);
         al_destroy_timer(timer);
         al_destroy_event_queue(queue);
@@ -1599,6 +1910,10 @@ int main()
         al_destroy_sample_instance(gameplay_music_instances);
         al_destroy_sample(item_collect_sample);
         al_destroy_sample_instance(item_collect_instance);
+        al_destroy_sample(voice_samples);
+        al_destroy_sample_instance(voice_instances);
+        al_destroy_sample(menu_music);
+        al_destroy_sample_instance(menu_instance);
         if (font) al_destroy_font(font);
         al_destroy_timer(timer);
         al_destroy_event_queue(queue);
@@ -1637,6 +1952,10 @@ int main()
         al_destroy_sample_instance(gameplay_music_instances);
         al_destroy_sample(item_collect_sample);
         al_destroy_sample_instance(item_collect_instance);
+        al_destroy_sample(voice_samples);
+        al_destroy_sample_instance(voice_instances);
+        al_destroy_sample(menu_music);
+        al_destroy_sample_instance(menu_instance);
         if (font) al_destroy_font(font);
         al_destroy_timer(timer);
         al_destroy_event_queue(queue);
@@ -1674,6 +1993,10 @@ int main()
         al_destroy_sample_instance(gameplay_music_instances);
         al_destroy_sample(item_collect_sample);
         al_destroy_sample_instance(item_collect_instance);
+        al_destroy_sample(voice_samples);
+        al_destroy_sample_instance(voice_instances);
+        al_destroy_sample(menu_music);
+        al_destroy_sample_instance(menu_instance);
         if (font) al_destroy_font(font);
         al_destroy_timer(timer);
         al_destroy_event_queue(queue);
@@ -1713,6 +2036,10 @@ int main()
         al_destroy_sample_instance(gameplay_music_instances);
         al_destroy_sample(item_collect_sample);
         al_destroy_sample_instance(item_collect_instance);
+        al_destroy_sample(voice_samples);
+        al_destroy_sample_instance(voice_instances);
+        al_destroy_sample(menu_music);
+        al_destroy_sample_instance(menu_instance);
         if (font) al_destroy_font(font);
         al_destroy_timer(timer);
         al_destroy_event_queue(queue);
@@ -1753,6 +2080,10 @@ int main()
         al_destroy_sample_instance(gameplay_music_instances);
         al_destroy_sample(item_collect_sample);
         al_destroy_sample_instance(item_collect_instance);
+        al_destroy_sample(voice_samples);
+        al_destroy_sample_instance(voice_instances);
+        al_destroy_sample(menu_music);
+        al_destroy_sample_instance(menu_instance);
         if (font) al_destroy_font(font);
         al_destroy_timer(timer);
         al_destroy_event_queue(queue);
@@ -1794,6 +2125,10 @@ int main()
         al_destroy_sample_instance(gameplay_music_instances);
         al_destroy_sample(item_collect_sample);
         al_destroy_sample_instance(item_collect_instance);
+        al_destroy_sample(voice_samples);
+        al_destroy_sample_instance(voice_instances);
+        al_destroy_sample(menu_music);
+        al_destroy_sample_instance(menu_instance);
         if (font) al_destroy_font(font);
         al_destroy_timer(timer);
         al_destroy_event_queue(queue);
@@ -1836,6 +2171,10 @@ int main()
         al_destroy_sample_instance(gameplay_music_instances);
         al_destroy_sample(item_collect_sample);
         al_destroy_sample_instance(item_collect_instance);
+        al_destroy_sample(voice_samples);
+        al_destroy_sample_instance(voice_instances);
+        al_destroy_sample(menu_music);
+        al_destroy_sample_instance(menu_instance);
         if (font) al_destroy_font(font);
         al_destroy_timer(timer);
         al_destroy_event_queue(queue);
@@ -1879,9 +2218,10 @@ int main()
         al_destroy_sample_instance(gameplay_music_instances);
         al_destroy_sample(item_collect_sample);
         al_destroy_sample_instance(item_collect_instance);
-        al_destroy_sample_instance(item_collect_instance);
-        al_destroy_sample(item_collect_sample);
-
+        al_destroy_sample(voice_samples);
+        al_destroy_sample_instance(voice_instances);
+        al_destroy_sample(menu_music);
+        al_destroy_sample_instance(menu_instance);
         if (font) al_destroy_font(font);
         al_destroy_timer(timer);
         al_destroy_event_queue(queue);
@@ -1949,20 +2289,25 @@ int main()
             reset_game_state(); // Reseta o jogo para uma nova partida
             al_start_timer(timer); // Inicia o timer do jogo
 
-            // >>> MUDANÇA AQUI: Escolhe uma música aleatória para a partida <<<
+            // Escolhe uma música aleatória para a partida
             int track_index = rand() % NUM_GAMEPLAY_TRACKS;
             ALLEGRO_SAMPLE_INSTANCE* chosen_music = gameplay_music_instances[track_index];
 
-            current_state = run_gameplay_loop(display, queue, timer, font_titulo_grande, font_subtitulo, font_botao, censure_sprite, knife_frame, death_sprite_frame, hit_instance, chosen_music, item_collect_instance, perform_fade);
+
+
+            current_state = run_gameplay_loop(display, queue, timer, font_titulo_grande, font_subtitulo, font_botao, censure_sprite, knife_frame, death_sprite_frame, hit_instance, chosen_music, item_collect_instance, voice_instances, perform_fade);
 
             al_stop_timer(timer); // Para o timer ao voltar para o menu
 
-            // >>> MUDANÇA AQUI: Garante que a música da partida parou <<<
-            if (chosen_music) al_stop_sample_instance(chosen_music);
 
-        }else if (current_state == STATE_EXITING)
+        }
+        else if (current_state == STATE_INSTRUCTIONS)
         {
-            running = false; // Define a condição para sair do loop principal
+            current_state = show_instructions_screen(display, queue, font_titulo_grande, font_subtitulo, font_botao);
+        }
+        else if (current_state == STATE_EXITING)
+        {
+            running = false; // condição para sair do loop principal
         }
     }
 
@@ -2002,15 +2347,14 @@ int main()
     al_destroy_sample_instance(gameplay_music_instances);
     al_destroy_sample(item_collect_sample);
     al_destroy_sample_instance(item_collect_instance);
-    al_destroy_sample_instance(menu_instance);
+    al_destroy_sample(voice_samples);
+    al_destroy_sample_instance(voice_instances);
     al_destroy_sample(menu_music);
+    al_destroy_sample_instance(menu_instance);
     if (font) al_destroy_font(font);
     al_destroy_timer(timer);
     al_destroy_event_queue(queue);
     al_destroy_display(display);
-
-    return 0;
-}
 
     return 0;
 }
