@@ -38,7 +38,6 @@
 #define NUM_NPCS 15
 #define MIN_NPC_DISTANCE 800
 #define MAX_NPC_DISTANCE 1200
-#define MIN_MIRROR_DISTANCE 500 // Nova constante para o espelho
 #define TILE_SIZE 40          // Tamanho dos tiles
 #define TILE_COLS (MAP_WIDTH / TILE_SIZE)  // 32 colunas
 #define TILE_ROWS (MAP_HEIGHT / TILE_SIZE) // 24 linhas
@@ -1185,11 +1184,6 @@ int main()
         return -1;
     }
 
-    ALLEGRO_FONT *font = al_load_ttf_font("../../fontes/minecraft.ttf", 20, 0);
-    if (!font) {
-        fprintf(stderr, "Aviso: Não foi possível carregar fonte '../../fontes/minecraft.ttf'. Continuando sem fonte.\n");
-    }
-
 
     srand(time(NULL));
 
@@ -1325,7 +1319,6 @@ int main()
         al_destroy_sample_instance(voice_instances);
         al_destroy_sample(menu_music);
         al_destroy_sample_instance(menu_instance);
-        if (font) al_destroy_font(font);
         al_destroy_timer(timer);
         al_destroy_event_queue(queue);
         al_destroy_display(display);
@@ -1347,7 +1340,6 @@ int main()
         al_destroy_sample_instance(voice_instances);
         al_destroy_sample(menu_music);
         al_destroy_sample_instance(menu_instance);
-        if (font) al_destroy_font(font);
         al_destroy_timer(timer);
         al_destroy_event_queue(queue);
         al_destroy_display(display);
@@ -1370,7 +1362,6 @@ int main()
         al_destroy_sample_instance(voice_instances);
         al_destroy_sample(menu_music);
         al_destroy_sample_instance(menu_instance);
-        if (font) al_destroy_font(font);
         al_destroy_timer(timer);
         al_destroy_event_queue(queue);
         al_destroy_display(display);
@@ -1394,7 +1385,6 @@ int main()
         al_destroy_sample_instance(voice_instances);
         al_destroy_sample(menu_music);
         al_destroy_sample_instance(menu_instance);
-        if (font) al_destroy_font(font);
         al_destroy_timer(timer);
         al_destroy_event_queue(queue);
         al_destroy_display(display);
@@ -1419,7 +1409,6 @@ int main()
         al_destroy_sample_instance(voice_instances);
         al_destroy_sample(menu_music);
         al_destroy_sample_instance(menu_instance);
-        if (font) al_destroy_font(font);
         al_destroy_timer(timer);
         al_destroy_event_queue(queue);
         al_destroy_display(display);
@@ -1445,7 +1434,6 @@ int main()
         al_destroy_sample_instance(voice_instances);
         al_destroy_sample(menu_music);
         al_destroy_sample_instance(menu_instance);
-        if (font) al_destroy_font(font);
         al_destroy_timer(timer);
         al_destroy_event_queue(queue);
         al_destroy_display(display);
@@ -1472,7 +1460,6 @@ int main()
         al_destroy_sample_instance(voice_instances);
         al_destroy_sample(menu_music);
         al_destroy_sample_instance(menu_instance);
-        if (font) al_destroy_font(font);
         al_destroy_timer(timer);
         al_destroy_event_queue(queue);
         al_destroy_display(display);
@@ -1500,7 +1487,6 @@ int main()
         al_destroy_sample_instance(voice_instances);
         al_destroy_sample(menu_music);
         al_destroy_sample_instance(menu_instance);
-        if (font) al_destroy_font(font);
         al_destroy_timer(timer);
         al_destroy_event_queue(queue);
         al_destroy_display(display);
@@ -1529,7 +1515,6 @@ int main()
         al_destroy_sample_instance(voice_instances);
         al_destroy_sample(menu_music);
         al_destroy_sample_instance(menu_instance);
-        if (font) al_destroy_font(font);
         al_destroy_timer(timer);
         al_destroy_event_queue(queue);
         al_destroy_display(display);
@@ -1559,7 +1544,6 @@ int main()
         al_destroy_sample_instance(voice_instances);
         al_destroy_sample(menu_music);
         al_destroy_sample_instance(menu_instance);
-        if (font) al_destroy_font(font);
         al_destroy_timer(timer);
         al_destroy_event_queue(queue);
         al_destroy_display(display);
@@ -1590,7 +1574,6 @@ int main()
         al_destroy_sample_instance(voice_instances);
         al_destroy_sample(menu_music);
         al_destroy_sample_instance(menu_instance);
-        if (font) al_destroy_font(font);
         al_destroy_timer(timer);
         al_destroy_event_queue(queue);
         al_destroy_display(display);
@@ -1622,7 +1605,6 @@ int main()
         al_destroy_sample_instance(voice_instances);
         al_destroy_sample(menu_music);
         al_destroy_sample_instance(menu_instance);
-        if (font) al_destroy_font(font);
         al_destroy_timer(timer);
         al_destroy_event_queue(queue);
         al_destroy_display(display);
@@ -1655,7 +1637,6 @@ int main()
         al_destroy_sample_instance(voice_instances);
         al_destroy_sample(menu_music);
         al_destroy_sample_instance(menu_instance);
-        if (font) al_destroy_font(font);
         al_destroy_timer(timer);
         al_destroy_event_queue(queue);
         al_destroy_display(display);
@@ -1689,7 +1670,6 @@ int main()
         al_destroy_sample_instance(voice_instances);
         al_destroy_sample(menu_music);
         al_destroy_sample_instance(menu_instance);
-        if (font) al_destroy_font(font);
         al_destroy_timer(timer);
         al_destroy_event_queue(queue);
         al_destroy_display(display);
@@ -1725,7 +1705,6 @@ int main()
         al_destroy_sample_instance(voice_instances);
         al_destroy_sample(menu_music);
         al_destroy_sample_instance(menu_instance);
-        if (font) al_destroy_font(font);
         al_destroy_timer(timer);
         al_destroy_event_queue(queue);
         al_destroy_display(display);
@@ -1762,7 +1741,6 @@ int main()
         al_destroy_sample_instance(voice_instances);
         al_destroy_sample(menu_music);
         al_destroy_sample_instance(menu_instance);
-        if (font) al_destroy_font(font);
         al_destroy_timer(timer);
         al_destroy_event_queue(queue);
         al_destroy_display(display);
@@ -1799,7 +1777,6 @@ int main()
         al_destroy_sample_instance(voice_instances);
         al_destroy_sample(menu_music);
         al_destroy_sample_instance(menu_instance);
-        if (font) al_destroy_font(font);
         al_destroy_timer(timer);
         al_destroy_event_queue(queue);
         al_destroy_display(display);
@@ -1836,7 +1813,6 @@ int main()
         al_destroy_sample_instance(voice_instances);
         al_destroy_sample(menu_music);
         al_destroy_sample_instance(menu_instance);
-        if (font) al_destroy_font(font);
         al_destroy_timer(timer);
         al_destroy_event_queue(queue);
         al_destroy_display(display);
@@ -1875,7 +1851,6 @@ int main()
         al_destroy_sample_instance(voice_instances);
         al_destroy_sample(menu_music);
         al_destroy_sample_instance(menu_instance);
-        if (font) al_destroy_font(font);
         al_destroy_timer(timer);
         al_destroy_event_queue(queue);
         al_destroy_display(display);
@@ -1914,7 +1889,6 @@ int main()
         al_destroy_sample_instance(voice_instances);
         al_destroy_sample(menu_music);
         al_destroy_sample_instance(menu_instance);
-        if (font) al_destroy_font(font);
         al_destroy_timer(timer);
         al_destroy_event_queue(queue);
         al_destroy_display(display);
@@ -1956,7 +1930,6 @@ int main()
         al_destroy_sample_instance(voice_instances);
         al_destroy_sample(menu_music);
         al_destroy_sample_instance(menu_instance);
-        if (font) al_destroy_font(font);
         al_destroy_timer(timer);
         al_destroy_event_queue(queue);
         al_destroy_display(display);
@@ -1997,7 +1970,6 @@ int main()
         al_destroy_sample_instance(voice_instances);
         al_destroy_sample(menu_music);
         al_destroy_sample_instance(menu_instance);
-        if (font) al_destroy_font(font);
         al_destroy_timer(timer);
         al_destroy_event_queue(queue);
         al_destroy_display(display);
@@ -2040,7 +2012,6 @@ int main()
         al_destroy_sample_instance(voice_instances);
         al_destroy_sample(menu_music);
         al_destroy_sample_instance(menu_instance);
-        if (font) al_destroy_font(font);
         al_destroy_timer(timer);
         al_destroy_event_queue(queue);
         al_destroy_display(display);
@@ -2084,7 +2055,6 @@ int main()
         al_destroy_sample_instance(voice_instances);
         al_destroy_sample(menu_music);
         al_destroy_sample_instance(menu_instance);
-        if (font) al_destroy_font(font);
         al_destroy_timer(timer);
         al_destroy_event_queue(queue);
         al_destroy_display(display);
@@ -2129,7 +2099,6 @@ int main()
         al_destroy_sample_instance(voice_instances);
         al_destroy_sample(menu_music);
         al_destroy_sample_instance(menu_instance);
-        if (font) al_destroy_font(font);
         al_destroy_timer(timer);
         al_destroy_event_queue(queue);
         al_destroy_display(display);
@@ -2175,7 +2144,6 @@ int main()
         al_destroy_sample_instance(voice_instances);
         al_destroy_sample(menu_music);
         al_destroy_sample_instance(menu_instance);
-        if (font) al_destroy_font(font);
         al_destroy_timer(timer);
         al_destroy_event_queue(queue);
         al_destroy_display(display);
@@ -2222,7 +2190,6 @@ int main()
         al_destroy_sample_instance(voice_instances);
         al_destroy_sample(menu_music);
         al_destroy_sample_instance(menu_instance);
-        if (font) al_destroy_font(font);
         al_destroy_timer(timer);
         al_destroy_event_queue(queue);
         al_destroy_display(display);
@@ -2351,10 +2318,10 @@ int main()
     al_destroy_sample_instance(voice_instances);
     al_destroy_sample(menu_music);
     al_destroy_sample_instance(menu_instance);
-    if (font) al_destroy_font(font);
     al_destroy_timer(timer);
     al_destroy_event_queue(queue);
     al_destroy_display(display);
 
     return 0;
 }
+
