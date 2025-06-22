@@ -190,62 +190,63 @@ typedef enum {
     }
 
 // função para encontrar uma posição de spawn válida
-    typedef struct {
-        int row, col;
-    } TilePosition;
+typedef struct {
+    int row, col;
+} TilePosition;
 
-    void find_valid_spawn_position(float *x, float *y, float player_x, float player_y, bool is_clone) {
+    void find_valid_spawn_position(float *x, float *y, float player_x, float player_y, bool is_clone)
+    {
         static TilePosition valid_tiles[TILE_ROWS * TILE_COLS];
         static int valid_tile_count = 0;
         static bool initialized = false;
 
-    // inicializar lista de tiles válidos
-    if (!initialized)
-    {
-        for (int row = 0; row < TILE_ROWS; row++) {
-            for (int col = 0; col < TILE_COLS; col++) {
-                if (map[row][col] != 0) {
-                    valid_tiles[valid_tile_count].row = row;
-                    valid_tiles[valid_tile_count].col = col;
-                    valid_tile_count++;
+        // inicializar lista de tiles válidos
+        if (!initialized)
+        {
+            for (int row = 0; row < TILE_ROWS; row++) {
+                for (int col = 0; col < TILE_COLS; col++) {
+                    if (map[row][col] != 0) {
+                        valid_tiles[valid_tile_count].row = row;
+                        valid_tiles[valid_tile_count].col = col;
+                        valid_tile_count++;
+                    }
                 }
             }
+            initialized = true;
         }
-        initialized = true;
-    }
-    if (valid_tile_count == 0) {
-        fprintf(stderr, "Erro: Nenhum tile válido para spawn.\n");
-        *x = player_x;
-        *y = player_y;
-        return;
-    }
-    if (is_clone)
-    {
-        // Para o clone, spawn a uma distância específica
-        int attempts = 0;
-        const int max_attempts = 50;
-        while (attempts < max_attempts)
+        if (valid_tile_count == 0) {
+            fprintf(stderr, "Erro: Nenhum tile válido para spawn.\n");
+            *x = player_x;
+            *y = player_y;
+            return;
+        }
+        if (is_clone)
         {
-            float angle = (float)(rand() % 360) * M_PI / 180.0;
-            float distance = MIN_NPC_DISTANCE + (float)(rand() % (MAX_NPC_DISTANCE - MIN_NPC_DISTANCE));
-            float temp_x = player_x + distance * cos(angle);
-            float temp_y = player_y + distance * sin(angle);
-            if (can_move(temp_x, temp_y)) {
-                *x = temp_x;
-                *y = temp_y;
-                return;
+            // Para o clone, spawn a uma distância específica
+            int attempts = 0;
+            const int max_attempts = 50;
+            while (attempts < max_attempts)
+            {
+                float angle = (float)(rand() % 360) * M_PI / 180.0;
+                float distance = MIN_NPC_DISTANCE + (float)(rand() % (MAX_NPC_DISTANCE - MIN_NPC_DISTANCE));
+                float temp_x = player_x + distance * cos(angle);
+                float temp_y = player_y + distance * sin(angle);
+                if (can_move(temp_x, temp_y)) {
+                    *x = temp_x;
+                    *y = temp_y;
+                    return;
+                }
+                attempts++;
             }
-            attempts++;
         }
+
+        // escolher um tile válido aleatoriamente
+        int index = rand() % valid_tile_count;
+        *x = valid_tiles[index].col * TILE_SIZE + (TILE_SIZE - SPRITE_SIZE) / 2;
+        *y = valid_tiles[index].row * TILE_SIZE + (TILE_SIZE - SPRITE_SIZE) / 2;
     }
 
-    // escolher um tile válido aleatoriamente
-    int index = rand() % valid_tile_count;
-    *x = valid_tiles[index].col * TILE_SIZE + (TILE_SIZE - SPRITE_SIZE) / 2;
-    *y = valid_tiles[index].row * TILE_SIZE + (TILE_SIZE - SPRITE_SIZE) / 2;
-}
-
-// máscara de luz
+    // máscara de luz
     void create_light_mask()
     {
         int radius = LIGHT_RADIUS;
@@ -267,71 +268,71 @@ typedef enum {
 
 
 
-void reset_game_state() // Função pra nova partida
-{
-    player.sprite_sheet = character_sprites[rand() % NUM_NPCS];
+    void reset_game_state() // Função pra nova partida
+    {
+        player.sprite_sheet = character_sprites[rand() % NUM_NPCS];
 
-    find_valid_spawn_position(&player.x, &player.y, 0, 0, false);
-    player.frame = 0;
-    player.movement = 0;
-    player.alive = true;
-    player.is_target = false;
-    player.move_timer = 0;
-    player.move_duration = 0;
-    player.move_mode = 0;
+        find_valid_spawn_position(&player.x, &player.y, 0, 0, false);
+        player.frame = 0;
+        player.movement = 0;
+        player.alive = true;
+        player.is_target = false;
+        player.move_timer = 0;
+        player.move_duration = 0;
+        player.move_mode = 0;
 
-    ALLEGRO_BITMAP *available_sprites[NUM_NPCS - 1];
-    int available_count = 0;
-    for (int j = 0; j < NUM_NPCS; j++) {
-        if (character_sprites[j] != player.sprite_sheet) {
-            available_sprites[available_count++] = character_sprites[j];
+        ALLEGRO_BITMAP *available_sprites[NUM_NPCS - 1];
+        int available_count = 0;
+        for (int j = 0; j < NUM_NPCS; j++) {
+            if (character_sprites[j] != player.sprite_sheet) {
+                available_sprites[available_count++] = character_sprites[j];
+            }
+        }
+
+        for (int i = 0; i < NUM_NPCS; i++) {
+            float spawn_x, spawn_y;
+            find_valid_spawn_position(&spawn_x, &spawn_y, player.x, player.y, i == 0);
+            npcs[i].x = spawn_x;
+            npcs[i].y = spawn_y;
+            npcs[i].sprite_sheet = (i == 0) ? player.sprite_sheet : available_sprites[i - 1];
+            npcs[i].frame = 0;
+            npcs[i].movement = 0;
+            npcs[i].alive = true;
+            npcs[i].is_target = (i == 0);
+            npcs[i].move_timer = 0;
+            npcs[i].move_duration = (rand() % 40 + 40) / 10.0;
+            npcs[i].move_mode = rand() % 4;
+            npcs[i].death_timer = 0.0f;
+        }
+
+        knife.active = false;
+        mirror_item.active = true;
+        find_valid_spawn_position(&mirror_item.x, &mirror_item.y, 0, 0, false);
+        found_mirror = false;
+
+        // Reseta as flags de controle do jogo
+        game_over = false;
+        victory = false;
+    }
+
+
+    void perform_fade(float duration, int direction) // fade na transição
+    {
+        if (duration <= 0) return;
+
+        int num_steps = 60 * duration; // 60 FPS * duração em segundos
+        float alpha_step = 255.0f / num_steps;
+
+        for (int i = 0; i <= num_steps; i++) {
+            float alpha = (direction == 1) ? (i * alpha_step) : (255 - (i * alpha_step));
+            if (alpha < 0) alpha = 0;
+            if (alpha > 255) alpha = 255;
+
+            al_draw_filled_rectangle(0, 0, WIDTH, HEIGHT, al_map_rgba(255, 255, 255, alpha));
+            al_flip_display();
+            al_rest(duration / num_steps);
         }
     }
-
-    for (int i = 0; i < NUM_NPCS; i++) {
-        float spawn_x, spawn_y;
-        find_valid_spawn_position(&spawn_x, &spawn_y, player.x, player.y, i == 0);
-        npcs[i].x = spawn_x;
-        npcs[i].y = spawn_y;
-        npcs[i].sprite_sheet = (i == 0) ? player.sprite_sheet : available_sprites[i - 1];
-        npcs[i].frame = 0;
-        npcs[i].movement = 0;
-        npcs[i].alive = true;
-        npcs[i].is_target = (i == 0);
-        npcs[i].move_timer = 0;
-        npcs[i].move_duration = (rand() % 40 + 40) / 10.0;
-        npcs[i].move_mode = rand() % 4;
-        npcs[i].death_timer = 0.0f;
-    }
-
-    knife.active = false;
-    mirror_item.active = true;
-    find_valid_spawn_position(&mirror_item.x, &mirror_item.y, 0, 0, false);
-    found_mirror = false;
-
-    // Reseta as flags de controle do jogo
-    game_over = false;
-    victory = false;
-}
-
-
-void perform_fade(float duration, int direction) // fade na transição
-{
-    if (duration <= 0) return;
-
-    int num_steps = 60 * duration; // 60 FPS * duração em segundos
-    float alpha_step = 255.0f / num_steps;
-
-    for (int i = 0; i <= num_steps; i++) {
-        float alpha = (direction == 1) ? (i * alpha_step) : (255 - (i * alpha_step));
-        if (alpha < 0) alpha = 0;
-        if (alpha > 255) alpha = 255;
-
-        al_draw_filled_rectangle(0, 0, WIDTH, HEIGHT, al_map_rgba(255, 255, 255, alpha));
-        al_flip_display();
-        al_rest(duration / num_steps);
-    }
-}
 
 
 
@@ -1037,11 +1038,12 @@ GameState run_gameplay_loop(ALLEGRO_DISPLAY* display, ALLEGRO_EVENT_QUEUE* queue
                 al_set_blender(ALLEGRO_ADD, ALLEGRO_ONE, ALLEGRO_ONE);
 
                 // 3. Desenha um pedaço do cenario ja iluminado por cima do escuro.
+
                 al_draw_bitmap_region(
-                    light_buffer,                                        // A origem é o buffer totalmente iluminado
-                    player.x - LIGHT_RADIUS, player.y - LIGHT_RADIUS,    // Pega a região ao redor do jogador NO MAPA
-                    LIGHT_RADIUS * 2, LIGHT_RADIUS * 2,                  // O tamanho da luz
-                    player.x - camera_x - LIGHT_RADIUS, player.y - camera_y - LIGHT_RADIUS, // Cola na posição correta NA TELA
+                    light_buffer,       // A origem é o buffer totalmente iluminado
+                    (player.x + SPRITE_SIZE / 2) - LIGHT_RADIUS, (player.y + SPRITE_SIZE / 2) - LIGHT_RADIUS,       // Pega a região ao redor do centro do jogador NO MAPA
+                    LIGHT_RADIUS * 2, LIGHT_RADIUS * 2,     // O tamanho da luz
+                    (player.x - camera_x + SPRITE_SIZE / 2) - LIGHT_RADIUS, (player.y - camera_y + SPRITE_SIZE / 2) - LIGHT_RADIUS,     // Cola na posição correta NA TELA, centrado
                     0
                 );
 
@@ -1126,7 +1128,6 @@ GameState run_gameplay_loop(ALLEGRO_DISPLAY* display, ALLEGRO_EVENT_QUEUE* queue
     return STATE_EXITING; // caso ESC
 
 } // fim da tela de jogo
-
 
 
 
@@ -2407,4 +2408,3 @@ int main()
 
     return 0;
 }
-
